@@ -45,8 +45,8 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 		// Save settings on admin update.
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 
-		// Phase 5: Callback handler for SISP response.
-		// add_action( 'woocommerce_api_' . $this->id, array( $this, 'handle_callback' ) );
+		// Callback handler for SISP response.
+		add_action( 'woocommerce_api_' . $this->id, array( $this, 'handle_callback' ) );
 	}
 
 	/**
@@ -242,5 +242,18 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 			'result'   => 'success',
 			'redirect' => $redirect_url,
 		);
+	}
+
+	/**
+	 * Handle the SISP callback response.
+	 *
+	 * Delegates to Vinti4_Callback_Handler for validation and order processing.
+	 * Triggered by the woocommerce_api_vinti4 endpoint when SISP redirects
+	 * the shopper back after payment.
+	 *
+	 * @return void
+	 */
+	public function handle_callback(): void {
+		Vinti4_Callback_Handler::handle( $this );
 	}
 }
