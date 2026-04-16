@@ -49,7 +49,7 @@ function vinti4_init() {
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-redirect-form.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-callback-handler.php';
 	// Phase 7: require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
-	// Phase 6: require_once VINTI4_PLUGIN_DIR . 'includes/class-wc-vinti4-blocks-support.php';
+	require_once VINTI4_PLUGIN_DIR . 'includes/class-wc-vinti4-blocks-support.php';
 
 	// Register the vinti4-payment rewrite endpoint.
 	add_action( 'init', 'vinti4_add_rewrite_rules' );
@@ -73,15 +73,14 @@ function vinti4_add_gateway( $methods ) {
 }
 add_filter( 'woocommerce_payment_gateways', 'vinti4_add_gateway' );
 
-// Phase 6: Block support registration.
-// add_action(
-//     'woocommerce_blocks_payment_method_type_registration',
-//     function ( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $registry ) {
-//         if ( class_exists( 'WC_Vinti4_Blocks_Support' ) ) {
-//             $registry->register( new WC_Vinti4_Blocks_Support() );
-//         }
-//     }
-// );
+add_action(
+    'woocommerce_blocks_payment_method_type_registration',
+    function ( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $registry ) {
+        if ( class_exists( 'WC_Vinti4_Blocks_Support' ) ) {
+            $registry->register( new WC_Vinti4_Blocks_Support() );
+        }
+    }
+);
 
 // Phase: i18n — Load plugin text domain.
 // add_action( 'plugins_loaded', function () {
