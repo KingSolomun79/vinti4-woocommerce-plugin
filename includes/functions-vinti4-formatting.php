@@ -120,3 +120,19 @@ function vinti4_shape_phone( string $phone ): array {
 		'subscriber' => $subscriber,
 	);
 }
+
+/**
+ * Check whether a SISP callback messageType indicates a successful payment.
+ *
+ * Success types are '8' (authorization), '10' (capture), 'M' and 'P'
+ * (SISP-specific success codes). Uses strict comparison via the third
+ * parameter to prevent type coercion (e.g. integer 8 matching '8').
+ *
+ * @since 1.0.0
+ *
+ * @param string $message_type The messageType field from the SISP callback response.
+ * @return bool True if the message type indicates a successful payment, false otherwise.
+ */
+function vinti4_is_success_message_type( string $message_type ): bool {
+	return in_array( $message_type, array( '8', '10', 'M', 'P' ), true );
+}
