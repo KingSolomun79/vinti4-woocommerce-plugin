@@ -101,10 +101,10 @@ Plans:
   1. Vinti4 appears as a payment option in Checkout Block
   2. Title and description render correctly from WooCommerce settings
   3. Selecting Vinti4 in Checkout Block routes through the same `process_payment()` as classic checkout
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 06-01: [TBD]
+- [ ] 06-01-PLAN.md — Create block integration class, JS registration script, and bootstrap wiring
 
 ### Phase 7: Logging & Diagnostics
 **Goal**: Support can diagnose payment issues from logs without exposing sensitive data
