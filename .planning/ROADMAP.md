@@ -86,11 +86,12 @@ Plans:
  3. A duplicate callback (second POST with same data) is safely rejected without mutating the order
  4. A failed callback marks the order failed and redirects the shopper back to checkout
   5. No manual stock reduction or cart emptying occurs in the callback path
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: [TBD]
-- [ ] 05-02: [TBD]
+- [ ] 05-01-PLAN.md — Response fingerprint builder method + success message type checker
+- [ ] 05-02-PLAN.md — Callback handler class with full validation, idempotency, and outcome handling
+- [ ] 05-03-PLAN.md — Gateway wiring (hook activation + bootstrap include)
 
 ### Phase 6: Checkout Block Support
 **Goal**: Gateway appears and works in WooCommerce Cart and Checkout Blocks
@@ -145,7 +146,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 2. Gateway Settings | 2/2 | ✓ Complete | 2026-04-16 |
 | 3. Fingerprint & Request Builder | 2/2 | ✓ Complete | 2026-04-16 |
 | 4. Payment Redirect Flow | 2/2 | ✓ Complete | 2026-04-16 |
-| 5. Callback & Idempotency | 0/2 | Not started | - |
+| 5. Callback & Idempotency | 0/3 | Not started | - |
 | 6. Checkout Block Support | 0/1 | Not started | - |
 | 7. Logging & Diagnostics | 0/1 | Not started | - |
 | 8. Testing & Certification Prep | 0/1 | Not started | - |
