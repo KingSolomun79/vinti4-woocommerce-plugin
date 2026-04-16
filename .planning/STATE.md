@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Current Position
 
 Phase: 1 of 8 (Safe Bootstrap)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-04-16 — Project initialized, requirements defined, roadmap created
+Plan: 1 of 1 in current phase (COMPLETE)
+Status: Phase 1 complete
+Last activity: 2026-04-16 — Completed 01-01 plan (Safe Bootstrap)
 
-Progress: ░░░░░░░░░░ 0%
+Progress: █░░░░░░░░░ 12.5%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: -
+- Total plans completed: 1
+- Average duration: ~17 min
+- Total execution time: ~17 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-safe-bootstrap | 1 | ~17 min | ~17 min |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 5 plans: 01-01 (~17 min)
+- Trend: Starting
 
 *Updated after each plan completion*
 
@@ -50,17 +50,21 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Init: Use `payment_complete()` for order completion
 - Init: Callback via `woocommerce_api_{gateway_id}`
 - Init: Build per PRD milestone order (bootstrap → gateway → fingerprint → redirect → callback → blocks → logging → tests)
+- 01-01: Filter-based gateway registration only (no direct instantiation)
+- 01-01: Unconditional admin notices loading outside plugins_loaded
+- 01-01: Commented-out require stubs with phase annotations for future files
+- 01-01: process_payment() stub returns failure (safe default)
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-None yet.
+None.
 
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Project initialized — roadmap created, ready for planning
+Stopped at: Completed 01-01-PLAN.md (Phase 1 Safe Bootstrap)
 Resume file: None
