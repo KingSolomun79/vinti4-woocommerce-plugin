@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 7 in progress — 07-01 delivered, 07-02 next
+**Current focus:** Phase 7 COMPLETE — ready for Phase 8 (Testing & Certification Prep)
 
 ## Current Position
 
-Phase: 7 of 8 (Logging & Diagnostics) — IN PROGRESS
-Plan: 1 of 2 in current phase
-Status: Plan complete — 07-01 delivered
-Last activity: 2026-04-16 — Completed 07-01-PLAN.md
+Phase: 7 of 8 (Logging & Diagnostics) — COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase complete — 07-02 delivered
+Last activity: 2026-04-16 — Completed 07-02-PLAN.md
 
-Progress: ████████▓░ 75%
+Progress: █████████░ 87.5%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: ~4 min
-- Total execution time: ~44 min
+- Total plans completed: 13
+- Average duration: ~3.5 min
+- Total execution time: ~46 min
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: ████████▓░ 75%
 | 04-payment-redirect-flow | 2 | ~9 min | ~4.5 min |
 | 05-callback-idempotency | 3 | ~8 min | ~2.7 min |
 | 06-checkout-block-support | 1 | ~1 min | ~1 min |
-| 07-logging-diagnostics | 1/2 | ~2 min | ~2 min |
+| 07-logging-diagnostics | 2 | ~4 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-03 (~3 min), 06-01 (~1 min), 07-01 (~2 min)
-- Trend: Steady fast pace — logger class was straightforward
+- Last 5 plans: 06-01 (~1 min), 07-01 (~2 min), 07-02 (~2 min)
+- Trend: Steady fast pace — logging calls were mechanical additions
 
 *Updated after each plan completion*
 
@@ -95,6 +95,9 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 06-01: Settings read from same woocommerce_vinti4_settings option as gateway class
 - 07-01: Logger loaded before blocks support in bootstrap (callback handler loads first)
 - 07-01: Logger init placed as last line of gateway constructor (all properties already set)
+- 07-02: Log-before-terminal-action pattern — every validation branch logs immediately before wp_die/redirect/status_update
+- 07-02: Request builder assigns to $result variable before logging, then returns $result
+- 07-02: Config error message names settings (pos_id, pos_auth_code, vbv2_url) but never logs values
 
 ### Pending Todos
 
@@ -107,5 +110,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 07-01-PLAN.md (Phase 7 plan 1 of 2)
+Stopped at: Completed 07-02-PLAN.md (Phase 7 COMPLETE — 2/2 plans done)
 Resume file: None
