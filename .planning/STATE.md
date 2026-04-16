@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 7 COMPLETE — ready for Phase 8 (Testing & Certification Prep)
+**Current focus:** Phase 8 (Testing & Certification Prep) — Plan 08-02 complete, Plan 08-01 running in parallel
 
 ## Current Position
 
-Phase: 7 of 8 (Logging & Diagnostics) — COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase complete — 07-02 delivered
-Last activity: 2026-04-16 — Completed 07-02-PLAN.md
+Phase: 8 of 8 (Testing & Certification Prep)
+Plan: 2 of 2 in current phase (Plan 02 COMPLETE; Plan 01 running in parallel)
+Status: Plan 08-02 complete — admin panel and certification checklist delivered
+Last activity: 2026-04-16 — Completed 08-02-PLAN.md
 
-Progress: █████████░ 87.5%
+Progress: ████████░░ 93.75% (15/16 plans complete; 08-01 pending)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: ~3.5 min
-- Total execution time: ~46 min
+- Total execution time: ~48 min
 
 **By Phase:**
 
@@ -34,10 +34,11 @@ Progress: █████████░ 87.5%
 | 05-callback-idempotency | 3 | ~8 min | ~2.7 min |
 | 06-checkout-block-support | 1 | ~1 min | ~1 min |
 | 07-logging-diagnostics | 2 | ~4 min | ~2 min |
+| 08-testing-certification-prep | 1 (of 2) | ~2 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-01 (~1 min), 07-01 (~2 min), 07-02 (~2 min)
-- Trend: Steady fast pace — logging calls were mechanical additions
+- Last 3 plans: 07-02 (~2 min), 08-02 (~2 min)
+- Trend: Steady fast pace
 
 *Updated after each plan completion*
 
@@ -98,10 +99,13 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 07-02: Log-before-terminal-action pattern — every validation branch logs immediately before wp_die/redirect/status_update
 - 07-02: Request builder assigns to $result variable before logging, then returns $result
 - 07-02: Config error message names settings (pos_id, pos_auth_code, vbv2_url) but never logs values
+- 08-02: Admin panel loaded in gateway constructor (avoids touching main bootstrap file — parallel-safe with 08-01)
+- 08-02: Callback simulation via source inspection (reflection + file scan, not execution)
+- 08-02: Transient-based result display with nonce-protected POST form
 
 ### Pending Todos
 
-None.
+- Plan 08-01 (PHPUnit test suite) is running in parallel — when complete, all verification methods in certification checklist will be executable
 
 ### Blockers/Concerns
 
@@ -110,5 +114,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 07-02-PLAN.md (Phase 7 COMPLETE — 2/2 plans done)
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
