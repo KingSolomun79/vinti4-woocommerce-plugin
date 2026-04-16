@@ -40,11 +40,11 @@ Plans:
   2. POS Auth Code field preserves special characters like `%` (no aggressive sanitization)
   3. Currency setting defaults to CVE and auto-detects from WooCommerce order currency
   4. Language setting switches between Portuguese and English
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: [TBD]
-- [ ] 02-02: [TBD]
+- [ ] 02-01-PLAN.md — Add 6 gateway settings fields (POS ID, Auth Code, SISP URL, language, debug, currency_default) with custom sanitization for Auth Code
+- [ ] 02-02-PLAN.md — Add get_currency_code() method with order auto-detect and ISO 4217 numeric code mapping
 
 ### Phase 3: Fingerprint & Request Builder
 **Goal**: Single canonical code path generates SISP-compliant fingerprints and payment request payloads
