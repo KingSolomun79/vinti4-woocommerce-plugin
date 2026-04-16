@@ -11,7 +11,7 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
 - [x] **Phase 3: Fingerprint & Request Builder** ✓ - Canonical fingerprint generation and payment request building with SISP compliance
 - [x] **Phase 4: Payment Redirect Flow** ✓ - Complete hosted redirect flow from checkout to SISP and back
 - [x] **Phase 5: Callback & Idempotency** ✓ - WooCommerce-native callback endpoint with validation and duplicate protection
-- [ ] **Phase 6: Checkout Block Support** - Gateway registration and rendering in WooCommerce Cart/Checkout Blocks
+- [x] **Phase 6: Checkout Block Support** ✓ - Gateway registration and rendering in WooCommerce Cart/Checkout Blocks
 - [ ] **Phase 7: Logging & Diagnostics** - Structured debug logging with secret redaction for support
 - [ ] **Phase 8: Testing & Certification Prep** - Unit tests for fingerprint and callback, certification checklist mapping
 
@@ -101,10 +101,10 @@ Plans:
   1. Vinti4 appears as a payment option in Checkout Block
   2. Title and description render correctly from WooCommerce settings
   3. Selecting Vinti4 in Checkout Block routes through the same `process_payment()` as classic checkout
-**Plans:** 1 plan
+**Plans**: 1 plan (complete)
 
 Plans:
-- [ ] 06-01-PLAN.md — Create block integration class, JS registration script, and bootstrap wiring
+- [x] 06-01-PLAN.md — Create block integration class, JS registration script, and bootstrap wiring
 
 ### Phase 7: Logging & Diagnostics
 **Goal**: Support can diagnose payment issues from logs without exposing sensitive data
@@ -147,6 +147,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 3. Fingerprint & Request Builder | 2/2 | ✓ Complete | 2026-04-16 |
 | 4. Payment Redirect Flow | 2/2 | ✓ Complete | 2026-04-16 |
 | 5. Callback & Idempotency | 3/3 | ✓ Complete | 2026-04-16 |
-| 6. Checkout Block Support | 0/1 | Not started | - |
+| 6. Checkout Block Support | 1/1 | ✓ Complete | 2026-04-16 |
 | 7. Logging & Diagnostics | 0/1 | Not started | - |
 | 8. Testing & Certification Prep | 0/1 | Not started | - |

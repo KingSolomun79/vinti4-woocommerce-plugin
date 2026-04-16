@@ -47,9 +47,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Checkout Block
 
-- [ ] **BLK-01**: Gateway registers block payment-method integration for Cart/Checkout Blocks
-- [ ] **BLK-02**: Gateway title and description render correctly in Checkout Block
-- [ ] **BLK-03**: Selecting Vinti4 in Checkout Block routes through `process_payment()`
+- [x] **BLK-01**: Gateway registers block payment-method integration for Cart/Checkout Blocks
+- [x] **BLK-02**: Gateway title and description render correctly in Checkout Block
+- [x] **BLK-03**: Selecting Vinti4 in Checkout Block routes through `process_payment()`
 
 ### Logging
 
@@ -121,9 +121,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CB-04 | Phase 5 | Complete |
 | CB-05 | Phase 5 | Complete |
 | FP-03 | Phase 5 | Complete |
-| BLK-01 | Phase 6 | Pending |
-| BLK-02 | Phase 6 | Pending |
-| BLK-03 | Phase 6 | Pending |
+| BLK-01 | Phase 6 | Complete |
+| BLK-02 | Phase 6 | Complete |
+| BLK-03 | Phase 6 | Complete |
 | LOG-01 | Phase 7 | Pending |
 | LOG-02 | Phase 7 | Pending |
 | LOG-03 | Phase 7 | Pending |
@@ -136,4 +136,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after Phase 5 completion*
+*Last updated: 2026-04-16 after Phase 6 completion*
