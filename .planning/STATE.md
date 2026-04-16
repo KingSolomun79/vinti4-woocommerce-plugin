@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Current Position
 
 Phase: 5 of 8 (Callback & Idempotency)
-Plan: 1 of 3 in current phase
-Status: In progress — 05-01 complete, 05-02 next
-Last activity: 2026-04-16 — Completed 05-01-PLAN.md
+Plan: 2 of 3 in current phase
+Status: In progress — 05-02 complete, 05-03 next
+Last activity: 2026-04-16 — Completed 05-02-PLAN.md
 
-Progress: █████░░░░░ 53%
+Progress: ██████░░░░ 59%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: ~5 min
-- Total execution time: ~36 min
+- Total plans completed: 9
+- Average duration: ~4 min
+- Total execution time: ~38 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: █████░░░░░ 53%
 | 02-gateway-settings | 2 | ~3 min | ~1.5 min |
 | 03-fingerprint-request-builder | 2 | ~4 min | ~2 min |
 | 04-payment-redirect-flow | 2 | ~9 min | ~4.5 min |
-| 05-callback-idempotency | 1 (of 3) | ~3 min | ~3 min |
+| 05-callback-idempotency | 2 (of 3) | ~5 min | ~2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (~2 min), 04-01 (~5 min), 04-02 (~4 min), 05-01 (~3 min)
+- Last 5 plans: 04-02 (~4 min), 05-01 (~3 min), 05-02 (~2 min)
 - Trend: Stable and fast
 
 *Updated after each plan completion*
@@ -82,6 +82,9 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 04-02: Gateway null guard renders error if Vinti4 gateway unavailable
 - 05-01: Response fingerprint uses same sha512_base64() primitive and absint()*1000 pattern as request fingerprint
 - 05-01: Success message types hardcoded as strict array: 8, 10, M, P
+- 05-02: Idempotency via _vinti4_callback_processed order meta, set before every redirect
+- 05-02: Tasks 1+2 merged (helper refactored inline during initial file creation)
+- 05-02: payment_complete() is the ONLY order completion mechanism — no manual stock/cart ops
 
 ### Pending Todos
 
@@ -94,5 +97,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
