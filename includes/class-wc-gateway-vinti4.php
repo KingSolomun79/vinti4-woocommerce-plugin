@@ -150,6 +150,38 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Get the ISO 4217 numeric currency code for a payment.
+	 *
+	 * Auto-detects the currency from the WooCommerce order when provided.
+	 * Falls back to the currency_default setting, then ultimately to CVE (132).
+	 *
+	 * @param WC_Order|null $order Optional. WooCommerce order to detect currency from.
+	 * @return string Numeric currency code (e.g. '132' for CVE).
+	 */
+	public function get_currency_code( $order = null ) {
+		$currency_map = array(
+			'CVE' => '132',
+			'EUR' => '978',
+			'USD' => '840',
+			'AOA' => '973',
+			'BRL' => '986',
+			'GBP' => '826',
+		);
+
+		$currency = '';
+
+		if ( $order && is_a( $order, 'WC_Order' ) ) {
+			$currency = $order->get_currency();
+		}
+
+		if ( empty( $currency ) || ! isset( $currency_map[ $currency ] ) ) {
+			$currency = $this->get_option( 'currency_default', 'CVE' );
+		}
+
+		return isset( $currency_map[ $currency ] ) ? $currency_map[ $currency ] : '132';
+	}
+
+	/**
 	 * Process the payment for a given order.
 	 *
 	 * Phase 4: Full payment redirect flow will be implemented here.
