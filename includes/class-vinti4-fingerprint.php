@@ -116,4 +116,76 @@ class Vinti4_Fingerprint {
 
 		return self::sha512_base64( $base );
 	}
+
+	/**
+	 * Build the SISP response fingerprint for callback verification.
+	 *
+	 * Recomputes the fingerprint from callback POST fields so it can be
+	 * compared against the `resultFingerPrint` value sent by SISP.
+	 *
+	 * Algorithm mirrors the SISP specification exactly:
+	 *   sha512_base64(posAuthCode) is concatenated with the remaining
+	 *   response fields in the documented order, then the entire base
+	 *   string is hashed again with sha512_base64 to produce the fingerprint.
+	 *
+	 * The purchase amount follows the same ×1000 convention used in
+	 * the request fingerprint.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $pos_auth_code           SISP `posAuthCode` field.
+	 * @param string $message_type            SISP `messageType` field.
+	 * @param string $clearing_period         SISP `clearingPeriod` field.
+	 * @param string $transaction_id          SISP `transactionID` field.
+	 * @param string $merchant_ref            SISP `merchantReference` field.
+	 * @param string $merchant_session        SISP `merchantSession` field.
+	 * @param string $purchase_amount         SISP `purchaseAmount` field (integer string, ×1000 applied).
+	 * @param string $message_id              SISP `messageID` field.
+	 * @param string $pan                     SISP `pan` (masked card number) field.
+	 * @param string $merchant_response       SISP `merchantResponse` field.
+	 * @param string $timestamp               SISP `timestamp` field.
+	 * @param string $reference_number        SISP `referenceNumber` field.
+	 * @param string $entity_code             SISP `entityCode` field.
+	 * @param string $client_receipt          SISP `clientReceipt` field.
+	 * @param string $additional_error_message SISP `additionalErrorMessage` field.
+	 * @param string $reload_code             SISP `reloadCode` field.
+	 * @return string Base64-encoded SHA-512 response fingerprint.
+	 */
+	public static function build_response_fingerprint(
+		string $pos_auth_code,
+		string $message_type,
+		string $clearing_period,
+		string $transaction_id,
+		string $merchant_ref,
+		string $merchant_session,
+		string $purchase_amount,
+		string $message_id,
+		string $pan,
+		string $merchant_response,
+		string $timestamp,
+		string $reference_number,
+		string $entity_code,
+		string $client_receipt,
+		string $additional_error_message,
+		string $reload_code
+	): string {
+		$base = self::sha512_base64( $pos_auth_code )
+			. trim( $message_type )
+			. trim( $clearing_period )
+			. trim( $transaction_id )
+			. trim( $merchant_ref )
+			. trim( $merchant_session )
+			. (string) ( absint( $purchase_amount ) * 1000 )
+			. trim( $message_id )
+			. trim( $pan )
+			. trim( $merchant_response )
+			. trim( $timestamp )
+			. trim( $reference_number )
+			. trim( $entity_code )
+			. trim( $client_receipt )
+			. trim( $additional_error_message )
+			. trim( $reload_code );
+
+		return self::sha512_base64( $base );
+	}
 }
