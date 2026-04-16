@@ -15,6 +15,8 @@
 
 The current plugin is a legacy WooCommerce gateway adaptation that breaks on modern WordPress/WooCommerce because it is not structured as a current WooCommerce payment extension. The main failures are: unsafe activation/bootstrap behavior, missing WooCommerce dependency guards, brittle standalone callback files, weak request-attempt persistence, outdated 3DS request shaping, no Cart/Checkout Block integration, and fingerprint-related instability caused by non-canonical request handling. WooCommerce’s gateway docs require a class-based gateway with guarded loading, proper settings, and gateway lifecycle hooks; Cart and Checkout Blocks require explicit payment-method integration; and WooCommerce 10.7 continues to invest in checkout, Store API, HPOS, and block fixes, so the extension must align with those patterns. ([The WooCommerce Developer Blog][1])
 
+The legacy plugin can + all official vinti4 documentation can be found in https://github.com/KingSolomun79/vinti4-wp-plugin/tree/main , pls note to DISREGARD all files in the "testing" folder , those are not relevant here 
+
 v1 will deliver a stable, production-usable hosted redirect gateway for Vinti4/SISP that:
 
 * activates safely on current WooCommerce,
