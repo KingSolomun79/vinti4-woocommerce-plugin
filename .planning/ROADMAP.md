@@ -26,11 +26,10 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
   2. Activating without WooCommerce shows an admin notice and the plugin stays dormant
   3. Vinti4 appears in the WooCommerce payment methods list
   4. Deactivating the plugin does not delete any orders, pages, or posts
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: [TBD]
-- [ ] 01-02: [TBD]
+- [ ] 01-01-PLAN.md — Complete plugin bootstrap with dependency guards, gateway registration, admin notices, and safe uninstall
 
 ### Phase 2: Gateway Settings
 **Goal**: All payment settings live inside WooCommerce → Settings → Payments with proper field types
@@ -142,7 +141,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Safe Bootstrap | 0/2 | Not started | - |
+| 1. Safe Bootstrap | 0/1 | Planned | - |
 | 2. Gateway Settings | 0/2 | Not started | - |
 | 3. Fingerprint & Request Builder | 0/2 | Not started | - |
 | 4. Payment Redirect Flow | 0/2 | Not started | - |
