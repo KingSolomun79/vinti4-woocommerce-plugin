@@ -77,7 +77,7 @@ class Vinti4_Request_Builder {
 			'', '', ''
 		);
 
-		return array(
+		$result = array(
 			'attempt_id'           => $attempt_id,
 			'timestamp'            => $timestamp,
 			'merchant_ref'         => $merchant_ref,
@@ -88,6 +88,22 @@ class Vinti4_Request_Builder {
 			'purchase_request_b64' => $purchase_request_b64,
 			'fingerprint'          => $fingerprint,
 		);
+
+		Vinti4_Logger::log( sprintf(
+			"Payment attempt built:\n  attempt_id: %s\n  order_id: %d\n  merchantRef: %s\n  merchantSession: %s\n  timestamp: %s\n  amount: %s\n  currency: %s\n  transaction_code: %s\n  posAuthCode (masked): %s\n  fingerprint: %s",
+			$attempt_id,
+			$order->get_id(),
+			$merchant_ref,
+			$merchant_session,
+			$timestamp,
+			$amount,
+			$currency,
+			$transaction_code,
+			Vinti4_Logger::mask_auth_code( $gateway->pos_auth_code ),
+			$fingerprint
+		) );
+
+		return $result;
 	}
 
 	/**

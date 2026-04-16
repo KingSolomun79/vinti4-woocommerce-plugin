@@ -210,6 +210,7 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 
 		// Validate required gateway settings.
 		if ( empty( $this->pos_id ) || empty( $this->pos_auth_code ) || empty( $this->vbv2_url ) ) {
+			Vinti4_Logger::log( 'Payment attempt blocked: gateway configuration incomplete (missing pos_id, pos_auth_code, or vbv2_url).', 'error' );
 			wc_add_notice( __( 'Payment configuration is incomplete. Please contact support.', 'vinti4' ), 'error' );
 			return array(
 				'result'   => 'failure',
