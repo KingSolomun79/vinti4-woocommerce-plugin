@@ -131,10 +131,11 @@ Plans:
   3. Duplicate callback test passes (second callback rejected safely)
  4. Invalid fingerprint callback test passes (order not completed)
  5. Certification checklist maps all SISP-required behaviors to test cases
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 08-01: [TBD]
+- [ ] 08-01-PLAN.md — PHPUnit infrastructure + pure PHP unit tests (fingerprint, formatting, logger mask)
+- [ ] 08-02-PLAN.md — Admin diagnostic panel + certification checklist
 
 ## Progress
 
@@ -150,4 +151,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Callback & Idempotency | 3/3 | ✓ Complete | 2026-04-16 |
 | 6. Checkout Block Support | 1/1 | ✓ Complete | 2026-04-16 |
 | 7. Logging & Diagnostics | 2/2 | ✓ Complete | 2026-04-16 |
-| 8. Testing & Certification Prep | 0/1 | Not started | - |
+| 8. Testing & Certification Prep | 0/2 | Not started | - |
