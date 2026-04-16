@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Plugin Bootstrap
 
-- [ ] **BOOT-01**: Plugin activates without fatal errors when WooCommerce is active
-- [ ] **BOOT-02**: Plugin shows admin notice and stays dormant when WooCommerce is inactive
-- [ ] **BOOT-03**: Gateway is registered via `woocommerce_payment_gateways` filter without direct instantiation
-- [ ] **BOOT-04**: No pages created on activation, no raw SQL on deactivation
+- [x] **BOOT-01**: Plugin activates without fatal errors when WooCommerce is active
+- [x] **BOOT-02**: Plugin shows admin notice and stays dormant when WooCommerce is inactive
+- [x] **BOOT-03**: Gateway is registered via `woocommerce_payment_gateways` filter without direct instantiation
+- [x] **BOOT-04**: No pages created on activation, no raw SQL on deactivation
 
 ### Gateway Settings
 
@@ -99,10 +99,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BOOT-01 | Phase 1 | Pending |
-| BOOT-02 | Phase 1 | Pending |
-| BOOT-03 | Phase 1 | Pending |
-| BOOT-04 | Phase 1 | Pending |
+| BOOT-01 | Phase 1 | Complete |
+| BOOT-02 | Phase 1 | Complete |
+| BOOT-03 | Phase 1 | Complete |
+| BOOT-04 | Phase 1 | Complete |
 | SETT-01 | Phase 2 | Pending |
 | SETT-02 | Phase 2 | Pending |
 | SETT-03 | Phase 2 | Pending |

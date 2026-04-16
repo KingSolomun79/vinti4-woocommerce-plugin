@@ -6,7 +6,7 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
 
 ## Phases
 
-- [ ] **Phase 1: Safe Bootstrap** - Plugin activates safely on modern WooCommerce with dependency guards and proper gateway registration
+- [x] **Phase 1: Safe Bootstrap** ✓ - Plugin activates safely on modern WooCommerce with dependency guards and proper gateway registration
 - [ ] **Phase 2: Gateway Settings** - Gateway class with WooCommerce-native settings UI and configurable fields
 - [ ] **Phase 3: Fingerprint & Request Builder** - Canonical fingerprint generation and payment request building with SISP compliance
 - [ ] **Phase 4: Payment Redirect Flow** - Complete hosted redirect flow from checkout to SISP and back
@@ -26,10 +26,10 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
   2. Activating without WooCommerce shows an admin notice and the plugin stays dormant
   3. Vinti4 appears in the WooCommerce payment methods list
   4. Deactivating the plugin does not delete any orders, pages, or posts
-**Plans**: 1 plan
+**Plans**: 1 plan (complete)
 
 Plans:
-- [ ] 01-01-PLAN.md — Complete plugin bootstrap with dependency guards, gateway registration, admin notices, and safe uninstall
+- [x] 01-01-PLAN.md — Complete plugin bootstrap with dependency guards, gateway registration, admin notices, and safe uninstall
 
 ### Phase 2: Gateway Settings
 **Goal**: All payment settings live inside WooCommerce → Settings → Payments with proper field types
@@ -141,7 +141,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Safe Bootstrap | 0/1 | Planned | - |
+| 1. Safe Bootstrap | 1/1 | ✓ Complete | 2026-04-16 |
 | 2. Gateway Settings | 0/2 | Not started | - |
 | 3. Fingerprint & Request Builder | 0/2 | Not started | - |
 | 4. Payment Redirect Flow | 0/2 | Not started | - |
