@@ -28,6 +28,8 @@ class Test_Callback_Handler extends TestCase {
 
 		// Create a mock gateway with the required pos_auth_code property.
 		$this->gateway = new class extends WC_Gateway_Vinti4 {
+			public string $pos_auth_code = '';
+
 			public function __construct() {
 				// Bypass parent constructor — no settings loading or add_action calls.
 			}
