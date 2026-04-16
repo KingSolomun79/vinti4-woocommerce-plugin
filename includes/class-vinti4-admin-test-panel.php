@@ -340,7 +340,7 @@ class Vinti4_Admin_Test_Panel {
 	/**
 	 * Test: Logger masks auth codes correctly.
 	 *
-	 * "ABCDEFGHYZ" → "ABC***YZ" (length 10, first 3 + *** + last 2).
+	 * "ABCDEFGHYZ" → "ABC*****YZ" (length 10, first 3 + ***** + last 2).
 	 *
 	 * @return array Test result.
 	 */
@@ -354,7 +354,7 @@ class Vinti4_Admin_Test_Panel {
 		}
 
 		$input    = 'ABCDEFGHYZ';
-		$expected = 'ABC***YZ';
+		$expected = 'ABC*****YZ';
 		$actual   = Vinti4_Logger::mask_auth_code( $input );
 
 		$correct = $expected === $actual;
