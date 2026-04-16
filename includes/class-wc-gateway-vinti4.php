@@ -184,16 +184,63 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 	/**
 	 * Process the payment for a given order.
 	 *
-	 * Phase 4: Full payment redirect flow will be implemented here.
+	 * Validates gateway configuration, builds a payment attempt via the request
+	 * builder, stores all attempt fields as order meta, and redirects to the
+	 * Vinti4 payment page that will POST the data to SISP.
 	 *
 	 * @param int $order_id Order ID.
-	 * @return array
+	 * @return array {
+	 *     @type string $result   'success' or 'failure'.
+	 *     @type string $redirect URL to redirect to on success.
+	 * }
 	 */
 	public function process_payment( $order_id ) {
-		// Phase 4: Implement full payment redirect flow.
+		$order = wc_get_order( $order_id );
+
+		if ( ! $order ) {
+			wc_add_notice( __( 'Invalid order. Please try again.', 'vinti4' ), 'error' );
+			return array(
+				'result'   => 'failure',
+				'redirect' => '',
+			);
+		}
+
+		// Validate required gateway settings.
+		if ( empty( $this->pos_id ) || empty( $this->pos_auth_code ) || empty( $this->vbv2_url ) ) {
+			wc_add_notice( __( 'Payment configuration is incomplete. Please contact support.', 'vinti4' ), 'error' );
+			return array(
+				'result'   => 'failure',
+				'redirect' => '',
+			);
+		}
+
+		// Build the canonical payment attempt.
+		$attempt = Vinti4_Request_Builder::build_payment_attempt( $order, $this );
+
+		// Store all attempt fields as order meta.
+		$order->update_meta_data( '_vinti4_attempt_id', $attempt['attempt_id'] );
+		$order->update_meta_data( '_vinti4_timestamp', $attempt['timestamp'] );
+		$order->update_meta_data( '_vinti4_merchant_ref', $attempt['merchant_ref'] );
+		$order->update_meta_data( '_vinti4_merchant_session', $attempt['merchant_session'] );
+		$order->update_meta_data( '_vinti4_transaction_code', $attempt['transaction_code'] );
+		$order->update_meta_data( '_vinti4_amount', $attempt['amount'] );
+		$order->update_meta_data( '_vinti4_currency', $attempt['currency'] );
+		$order->update_meta_data( '_vinti4_purchase_request_b64', $attempt['purchase_request_b64'] );
+		$order->update_meta_data( '_vinti4_fingerprint', $attempt['fingerprint'] );
+		$order->save();
+
+		// Build redirect URL to the Vinti4 payment page.
+		$redirect_url = add_query_arg(
+			array(
+				'order' => $order_id,
+				'key'   => $order->get_order_key(),
+			),
+			home_url( '/vinti4-payment/' )
+		);
+
 		return array(
-			'result'   => 'failure',
-			'redirect' => '',
+			'result'   => 'success',
+			'redirect' => $redirect_url,
 		);
 	}
 }
