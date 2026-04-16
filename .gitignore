@@ -1,0 +1,7 @@
+/vendor/
+/.phpunit.cache
+/phpunit.cache
+/tools/
+/composer.phar
+/composer-setup.php
+*.bak
