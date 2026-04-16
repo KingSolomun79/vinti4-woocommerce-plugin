@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 5 complete — Phase 6 (Checkout Blocks) next
+**Current focus:** Phase 6 complete — Phase 7 (Logging) next
 
 ## Current Position
 
-Phase: 5 of 8 (Callback & Idempotency) — COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase complete — all 05 plans delivered
-Last activity: 2026-04-16 — Completed 05-03-PLAN.md
+Phase: 6 of 8 (Checkout Block Support) — COMPLETE
+Plan: 1 of 1 in current phase
+Status: Phase complete — 06-01 delivered
+Last activity: 2026-04-16 — Completed 06-01-PLAN.md
 
-Progress: ███████░░░ 62%
+Progress: ███████▓░░ 69%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
+- Total plans completed: 11
 - Average duration: ~4 min
-- Total execution time: ~41 min
+- Total execution time: ~42 min
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: ███████░░░ 62%
 | 03-fingerprint-request-builder | 2 | ~4 min | ~2 min |
 | 04-payment-redirect-flow | 2 | ~9 min | ~4.5 min |
 | 05-callback-idempotency | 3 | ~8 min | ~2.7 min |
+| 06-checkout-block-support | 1 | ~1 min | ~1 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (~3 min), 05-02 (~2 min), 05-03 (~3 min)
-- Trend: Stable and fast
+- Last 5 plans: 05-02 (~2 min), 05-03 (~3 min), 06-01 (~1 min)
+- Trend: Accelerating — block support was straightforward
 
 *Updated after each plan completion*
 
@@ -87,6 +88,10 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 05-02: payment_complete() is the ONLY order completion mechanism — no manual stock/cart ops
 - 05-03: Minimal gateway handle_callback() — one-liner delegating to Vinti4_Callback_Handler::handle()
 - 05-03: Include order preserves dependency chain in vinti4_init()
+- 06-01: Plain JS IIFE pattern — no build step needed for block registration
+- 06-01: canMakePayment always returns true — availability controlled server-side by is_active()
+- 06-01: Block registration hook outside vinti4_init() at top level (same pattern as gateway filter)
+- 06-01: Settings read from same woocommerce_vinti4_settings option as gateway class
 
 ### Pending Todos
 
@@ -99,5 +104,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 05-03-PLAN.md (Phase 5 complete)
+Stopped at: Completed 06-01-PLAN.md (Phase 6 complete)
 Resume file: None
