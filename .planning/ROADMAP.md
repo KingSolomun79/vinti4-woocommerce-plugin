@@ -70,11 +70,11 @@ Plans:
   2. The receipt page auto-posts the canonical payment data to SISP
  3. All request fields (fingerprint, timestamp, merchantRef, etc.) are stored on the order before redirect
   4. Invalid configuration (missing POS ID/Auth Code/URL) shows an error instead of crashing
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: [TBD]
-- [ ] 04-02: [TBD]
+- [ ] 04-01-PLAN.md — Implement process_payment() with config validation, attempt creation via Request Builder, order meta storage, and WordPress rewrite endpoint registration
+- [ ] 04-02-PLAN.md — Create Vinti4_Redirect_Form class (auto-posting HTML form to SISP) and wire into parse_request handler
 
 ### Phase 5: Callback & Idempotency
 **Goal**: SISP callbacks are handled safely via WooCommerce API endpoint with full validation and duplicate protection
@@ -144,7 +144,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 1. Safe Bootstrap | 1/1 | ✓ Complete | 2026-04-16 |
 | 2. Gateway Settings | 2/2 | ✓ Complete | 2026-04-16 |
 | 3. Fingerprint & Request Builder | 2/2 | ✓ Complete | 2026-04-16 |
-| 4. Payment Redirect Flow | 0/2 | Not started | - |
+| 4. Payment Redirect Flow | 0/2 | Planning complete | - |
 | 5. Callback & Idempotency | 0/2 | Not started | - |
 | 6. Checkout Block Support | 0/1 | Not started | - |
 | 7. Logging & Diagnostics | 0/1 | Not started | - |
