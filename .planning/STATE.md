@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Current Position
 
 Phase: 4 of 8 (Payment Redirect Flow)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-04-16 — Phase 3 executed and verified (4/4 must-haves passed)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-04-16 — Completed 04-01-PLAN.md (process_payment + rewrite endpoint)
 
-Progress: ████░░░░░░ 38%
+Progress: █████░░░░░ 43%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: ~5 min
-- Total execution time: ~24 min
+- Total execution time: ~29 min
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: ████░░░░░░ 38%
 | 01-safe-bootstrap | 1 | ~17 min | ~17 min |
 | 02-gateway-settings | 2 | ~3 min | ~1.5 min |
 | 03-fingerprint-request-builder | 2 | ~4 min | ~2 min |
+| 04-payment-redirect-flow | 1 | ~5 min | ~5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (~2 min), 02-02 (~1 min), 03-01 (~2 min), 03-02 (~2 min)
+- Last 5 plans: 02-02 (~1 min), 03-01 (~2 min), 03-02 (~2 min), 04-01 (~5 min)
 - Trend: Stable and fast
 
 *Updated after each plan completion*
@@ -69,6 +70,11 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 03-02: Transaction code hardcoded to '1' (Authorization)
 - 03-02: addrMatch compares address_1, city, postcode, country (not state)
 - 03-02: Phone block reuses billing phone for both work and mobile
+- 04-01: Config validation checks pos_id, pos_auth_code, vbv2_url before attempt building
+- 04-01: wc_add_notice() for user-facing errors (not wp_die or exceptions)
+- 04-01: Dual query args on redirect URL (order ID + order key for security)
+- 04-01: parse_request with URI fallback for rewrite rule edge cases
+- 04-01: Placeholder handler for form rendering (deferred to 04-02)
 
 ### Pending Todos
 
@@ -81,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 03-02-PLAN.md (Request Builder & Bootstrap Wiring) — Phase 3 complete
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
