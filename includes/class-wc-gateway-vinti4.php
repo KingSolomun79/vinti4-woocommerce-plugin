@@ -32,9 +32,15 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 		$this->init_settings();
 
 		// Load saved settings into properties.
-		$this->title       = $this->get_option( 'title' );
-		$this->description = $this->get_option( 'description' );
-		$this->enabled     = $this->get_option( 'enabled' );
+		$this->title            = $this->get_option( 'title' );
+		$this->description      = $this->get_option( 'description' );
+		$this->enabled          = $this->get_option( 'enabled' );
+		$this->pos_id           = $this->get_option( 'pos_id' );
+		$this->pos_auth_code    = $this->get_option( 'pos_auth_code' );
+		$this->vbv2_url         = $this->get_option( 'vbv2_url' );
+		$this->language         = $this->get_option( 'language' );
+		$this->debug            = $this->get_option( 'debug' );
+		$this->currency_default = $this->get_option( 'currency_default' );
 
 		// Save settings on admin update.
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
@@ -124,6 +130,23 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 				'desc_tip'    => true,
 			),
 		);
+	}
+
+	/**
+	 * Save admin options with custom sanitization for POS Auth Code.
+	 *
+	 * Calls parent first, then overwrites pos_auth_code using wp_unslash()
+	 * to preserve special characters (% + / =) that sanitize_text_field() would strip.
+	 *
+	 * @return void
+	 */
+	public function process_admin_options() {
+		parent::process_admin_options();
+
+		$post_key = 'woocommerce_' . $this->id . '_pos_auth_code';
+		if ( isset( $_POST[ $post_key ] ) ) {
+			$this->update_option( 'pos_auth_code', wp_unslash( $_POST[ $post_key ] ) );
+		}
 	}
 
 	/**
