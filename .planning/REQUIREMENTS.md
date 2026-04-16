@@ -35,7 +35,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **FP-01**: Request fingerprint uses SHA-512 + Base64 with exact SISP field ordering
 - [x] **FP-02**: Amount in fingerprint hash = integer amount × 1000
 - [x] **FP-03**: Response fingerprint validated before order completion (success message types: 8, 10, M, P)
-- [ ] **FP-04**: Debug logs capture fingerprint inputs without exposing full POS auth code
+- [x] **FP-04**: Debug logs capture fingerprint inputs without exposing full POS auth code
 
 ### Callback Handling
 
@@ -53,9 +53,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Logging
 
-- [ ] **LOG-01**: Structured debug logging for request fingerprint inputs, outgoing payload, callback receipt, validation results
-- [ ] **LOG-02**: Full POS auth code never appears in logs
-- [ ] **LOG-03**: Logs can distinguish: request formation issue, callback fingerprint mismatch, duplicate callback, invalid amount, invalid reference
+- [x] **LOG-01**: Structured debug logging for request fingerprint inputs, outgoing payload, callback receipt, validation results
+- [x] **LOG-02**: Full POS auth code never appears in logs
+- [x] **LOG-03**: Logs can distinguish: request formation issue, callback fingerprint mismatch, duplicate callback, invalid amount, invalid reference
 
 ## v2 Requirements
 
@@ -124,10 +124,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BLK-01 | Phase 6 | Complete |
 | BLK-02 | Phase 6 | Complete |
 | BLK-03 | Phase 6 | Complete |
-| LOG-01 | Phase 7 | Pending |
-| LOG-02 | Phase 7 | Pending |
-| LOG-03 | Phase 7 | Pending |
-| FP-04 | Phase 7 | Pending |
+| LOG-01 | Phase 7 | Complete |
+| LOG-02 | Phase 7 | Complete |
+| LOG-03 | Phase 7 | Complete |
+| FP-04 | Phase 7 | Complete |
 
 **Coverage:**
 - v1 requirements: 27 total
@@ -136,4 +136,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after Phase 6 completion*
+*Last updated: 2026-04-16 after Phase 7 completion*

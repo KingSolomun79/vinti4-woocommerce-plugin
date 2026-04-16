@@ -12,7 +12,7 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
 - [x] **Phase 4: Payment Redirect Flow** ✓ - Complete hosted redirect flow from checkout to SISP and back
 - [x] **Phase 5: Callback & Idempotency** ✓ - WooCommerce-native callback endpoint with validation and duplicate protection
 - [x] **Phase 6: Checkout Block Support** ✓ - Gateway registration and rendering in WooCommerce Cart/Checkout Blocks
-- [ ] **Phase 7: Logging & Diagnostics** - Structured debug logging with secret redaction for support
+- [x] **Phase 7: Logging & Diagnostics** ✓ - Structured debug logging with secret redaction for support
 - [ ] **Phase 8: Testing & Certification Prep** - Unit tests for fingerprint and callback, certification checklist mapping
 
 ## Phase Details
@@ -115,11 +115,11 @@ Plans:
   2. Logs capture callback receipt, validation result, and duplicate callback detection
   3. Full POS auth code never appears in any log entry
   4. Logs can distinguish between: request formation issue, fingerprint mismatch, duplicate callback, invalid amount, invalid reference
-**Plans**: 2 plans
+**Plans**: 2 plans (complete)
 
 Plans:
-- [ ] 07-01-PLAN.md — Create Vinti4_Logger class with auth code masking and wire into bootstrap + gateway constructor
-- [ ] 07-02-PLAN.md — Add structured logging calls to request builder, gateway process_payment, and callback handler
+- [x] 07-01-PLAN.md — Create Vinti4_Logger class with auth code masking and wire into bootstrap + gateway constructor
+- [x] 07-02-PLAN.md — Add structured logging calls to request builder, gateway process_payment, and callback handler
 
 ### Phase 8: Testing & Certification Prep
 **Goal**: Unit tests verify fingerprint correctness and callback handling; certification checklist is mapped
@@ -149,5 +149,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 4. Payment Redirect Flow | 2/2 | ✓ Complete | 2026-04-16 |
 | 5. Callback & Idempotency | 3/3 | ✓ Complete | 2026-04-16 |
 | 6. Checkout Block Support | 1/1 | ✓ Complete | 2026-04-16 |
-| 7. Logging & Diagnostics | 0/2 | Not started | - |
+| 7. Logging & Diagnostics | 2/2 | ✓ Complete | 2026-04-16 |
 | 8. Testing & Certification Prep | 0/1 | Not started | - |
