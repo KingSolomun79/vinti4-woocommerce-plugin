@@ -10,28 +10,29 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Current Position
 
 Phase: 2 of 8 (Gateway Settings)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-04-16 — Phase 1 executed and verified (4/4 must-haves passed)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-04-16 — Completed 02-01-PLAN.md (Gateway Settings Fields)
 
-Progress: █░░░░░░░░░ 12.5%
+Progress: ███░░░░░░░ 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: ~17 min
-- Total execution time: ~17 min
+- Total plans completed: 2
+- Average duration: ~10 min
+- Total execution time: ~19 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-safe-bootstrap | 1 | ~17 min | ~17 min |
+| 02-gateway-settings | 1 | ~2 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~17 min)
-- Trend: Starting
+- Last 5 plans: 01-01 (~17 min), 02-01 (~2 min)
+- Trend: Accelerating
 
 *Updated after each plan completion*
 
@@ -54,6 +55,8 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 01-01: Unconditional admin notices loading outside plugins_loaded
 - 01-01: Commented-out require stubs with phase annotations for future files
 - 01-01: process_payment() stub returns failure (safe default)
+- 02-01: Auth code sanitization via wp_unslash() only (preserve % + / =)
+- 02-01: Sandbox-first default for vbv2_url (test URL by default)
 
 ### Pending Todos
 
@@ -66,5 +69,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 01-01-PLAN.md (Phase 1 Safe Bootstrap)
+Stopped at: Completed 02-01-PLAN.md (Gateway Settings Fields)
 Resume file: None
