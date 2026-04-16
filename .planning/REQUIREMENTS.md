@@ -23,11 +23,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Payment Flow
 
-- [ ] **PAY-01**: `process_payment()` validates config and creates a canonical payment attempt
+- [x] **PAY-01**: `process_payment()` validates config and creates a canonical payment attempt
 - [x] **PAY-02**: Request fingerprint generated from a single canonical code path only
-- [ ] **PAY-03**: All request fields stored on the order as meta before redirect
+- [x] **PAY-03**: All request fields stored on the order as meta before redirect
 - [x] **PAY-04**: Each payment attempt generates unique `merchantRef` and `merchantSession`
-- [ ] **PAY-05**: Shopper is redirected to a receipt/start page that auto-posts to SISP
+- [x] **PAY-05**: Shopper is redirected to a receipt/start page that auto-posts to SISP
 - [x] **PAY-06**: purchaseRequest JSON excludes deprecated `purchaseDate` field
 
 ### Fingerprint
@@ -112,9 +112,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PAY-06 | Phase 3 | Complete |
 | FP-01 | Phase 3 | Complete |
 | FP-02 | Phase 3 | Complete |
-| PAY-01 | Phase 4 | Pending |
-| PAY-03 | Phase 4 | Pending |
-| PAY-05 | Phase 4 | Pending |
+| PAY-01 | Phase 4 | Complete |
+| PAY-03 | Phase 4 | Complete |
+| PAY-05 | Phase 4 | Complete |
 | CB-01 | Phase 5 | Pending |
 | CB-02 | Phase 5 | Pending |
 | CB-03 | Phase 5 | Pending |
@@ -136,4 +136,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after roadmap creation*
+*Last updated: 2026-04-16 after Phase 4 completion*
