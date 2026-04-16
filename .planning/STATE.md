@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Current Position
 
 Phase: 3 of 8 (Fingerprint & Request Builder)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-04-16 — Phase 2 executed and verified (7/7 must-haves passed)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-04-16 — Completed 03-01 (Fingerprint & Formatting Helpers)
 
-Progress: ██░░░░░░░░ 25%
+Progress: ███░░░░░░░ 31%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: ~7 min
-- Total execution time: ~20 min
+- Total plans completed: 4
+- Average duration: ~6 min
+- Total execution time: ~22 min
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: ██░░░░░░░░ 25%
 |-------|-------|-------|----------|
 | 01-safe-bootstrap | 1 | ~17 min | ~17 min |
 | 02-gateway-settings | 2 | ~3 min | ~1.5 min |
+| 03-fingerprint-request-builder | 1 (of 2) | ~2 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~17 min), 02-01 (~2 min), 02-02 (~1 min)
-- Trend: Accelerating
+- Last 5 plans: 01-01 (~17 min), 02-01 (~2 min), 02-02 (~1 min), 03-01 (~2 min)
+- Trend: Stable and fast
 
 *Updated after each plan completion*
 
@@ -60,6 +61,9 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 02-02: Static currency map (no Composer) with 6 currencies: CVE, EUR, USD, AOA, BRL, GBP
 - 02-02: Triple fallback chain: order currency → currency_default setting → hardcoded CVE ('132')
 - 02-02: String return type for SISP protocol compatibility
+- 03-01: Standalone functions (not class methods) for formatting helpers
+- 03-01: absint(round()) for amount normalization (PHP default rounding)
+- 03-01: Optional fingerprint fields appended only when non-empty (Yoda conditions)
 
 ### Pending Todos
 
@@ -72,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 02-02-PLAN.md (Currency Helper Method) — Phase 2 complete
+Stopped at: Completed 03-01-PLAN.md (Fingerprint & Formatting Helpers)
 Resume file: None
