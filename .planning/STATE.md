@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 8 (Testing & Certification Prep) — Plan 08-02 complete, Plan 08-01 running in parallel
+**Current focus:** Phase 8 (Testing & Certification Prep) — COMPLETE
 
 ## Current Position
 
 Phase: 8 of 8 (Testing & Certification Prep)
-Plan: 2 of 2 in current phase (Plan 02 COMPLETE; Plan 01 running in parallel)
-Status: Plan 08-02 complete — admin panel and certification checklist delivered
-Last activity: 2026-04-16 — Completed 08-02-PLAN.md
+Plan: 2 of 2 in current phase (BOTH COMPLETE)
+Status: Phase complete — 08-01 and 08-02 delivered
+Last activity: 2026-04-16 — Completed 08-01-PLAN.md
 
-Progress: ████████░░ 93.75% (15/16 plans complete; 08-01 pending)
+Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: ~3.5 min
-- Total execution time: ~48 min
+- Total plans completed: 16
+- Average duration: ~4.3 min
+- Total execution time: ~69 min
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: ████████░░ 93.75% (15/16 plans complete; 08-01 pen
 | 05-callback-idempotency | 3 | ~8 min | ~2.7 min |
 | 06-checkout-block-support | 1 | ~1 min | ~1 min |
 | 07-logging-diagnostics | 2 | ~4 min | ~2 min |
-| 08-testing-certification-prep | 1 (of 2) | ~2 min | ~2 min |
+| 08-testing-certification-prep | 2 | ~17 min | ~8.5 min |
 
 **Recent Trend:**
-- Last 3 plans: 07-02 (~2 min), 08-02 (~2 min)
-- Trend: Steady fast pace
+- Last 3 plans: 07-02 (~2 min), 08-02 (~2 min), 08-01 (~15 min)
+- Trend: 08-01 took longer due to PHP installation + fixture computation; all phases complete
 
 *Updated after each plan completion*
 
@@ -99,13 +99,17 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 07-02: Log-before-terminal-action pattern — every validation branch logs immediately before wp_die/redirect/status_update
 - 07-02: Request builder assigns to $result variable before logging, then returns $result
 - 07-02: Config error message names settings (pos_id, pos_auth_code, vbv2_url) but never logs values
+- 08-01: PHPUnit 10 with custom suffix=".php" to support Test_*.php naming convention
+- 08-01: Anonymous class mocks extend stub base classes for PHP type hint compatibility
+- 08-01: Pre-computed fixture vectors using raw hash()+base64_encode() (no circular dependency)
+- 08-01: PHP 8.2.30 installed at C:\tools\php for test execution
 - 08-02: Admin panel loaded in gateway constructor (avoids touching main bootstrap file — parallel-safe with 08-01)
 - 08-02: Callback simulation via source inspection (reflection + file scan, not execution)
 - 08-02: Transient-based result display with nonce-protected POST form
 
 ### Pending Todos
 
-- Plan 08-01 (PHPUnit test suite) is running in parallel — when complete, all verification methods in certification checklist will be executable
+None.
 
 ### Blockers/Concerns
 
@@ -114,5 +118,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 08-02-PLAN.md
+Stopped at: Completed 08-01-PLAN.md (ALL PLANS COMPLETE)
 Resume file: None
