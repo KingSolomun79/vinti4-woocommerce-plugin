@@ -55,11 +55,11 @@ Plans:
   2. Amount in fingerprint hash is integer amount × 1000
   3. Each payment attempt generates a unique merchantRef (e.g., `WC{order_id}-{timestamp}`) and merchantSession
   4. purchaseRequest JSON does not include the deprecated `purchaseDate` field
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: [TBD]
-- [ ] 03-02: [TBD]
+- [ ] 03-01-PLAN.md — Create Vinti4_Fingerprint class (SHA-512 + Base64) and formatting helper functions
+- [ ] 03-02-PLAN.md — Create Vinti4_Request_Builder class (canonical payment attempt builder) and wire Phase 3 requires
 
 ### Phase 4: Payment Redirect Flow
 **Goal**: Shopper can complete checkout via SISP hosted redirect and return to a correctly-processed order
