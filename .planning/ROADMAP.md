@@ -1,0 +1,152 @@
+# Roadmap: Vinti4 for WooCommerce
+
+## Overview
+
+Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy adaptation into a modern WooCommerce payment extension. The plugin integrates with SISP to process card payments via a hosted 3DS redirect flow. This v1 focuses on stability, standards-alignment, and fingerprint reliability — creating a clean base for v2 tokenization.
+
+## Phases
+
+- [ ] **Phase 1: Safe Bootstrap** - Plugin activates safely on modern WooCommerce with dependency guards and proper gateway registration
+- [ ] **Phase 2: Gateway Settings** - Gateway class with WooCommerce-native settings UI and configurable fields
+- [ ] **Phase 3: Fingerprint & Request Builder** - Canonical fingerprint generation and payment request building with SISP compliance
+- [ ] **Phase 4: Payment Redirect Flow** - Complete hosted redirect flow from checkout to SISP and back
+- [ ] **Phase 5: Callback & Idempotency** - WooCommerce-native callback endpoint with validation and duplicate protection
+- [ ] **Phase 6: Checkout Block Support** - Gateway registration and rendering in WooCommerce Cart/Checkout Blocks
+- [ ] **Phase 7: Logging & Diagnostics** - Structured debug logging with secret redaction for support
+- [ ] **Phase 8: Testing & Certification Prep** - Unit tests for fingerprint and callback, certification checklist mapping
+
+## Phase Details
+
+### Phase 1: Safe Bootstrap
+**Goal**: Plugin activates without fatal errors and registers cleanly with WooCommerce
+**Depends on**: Nothing (first phase)
+**Requirements**: BOOT-01, BOOT-02, BOOT-03, BOOT-04
+**Success Criteria** (what must be TRUE):
+  1. Activating the plugin with WooCommerce active produces no critical error
+  2. Activating without WooCommerce shows an admin notice and the plugin stays dormant
+  3. Vinti4 appears in the WooCommerce payment methods list
+  4. Deactivating the plugin does not delete any orders, pages, or posts
+**Plans**: TBD
+
+Plans:
+- [ ] 01-01: [TBD]
+- [ ] 01-02: [TBD]
+
+### Phase 2: Gateway Settings
+**Goal**: All payment settings live inside WooCommerce → Settings → Payments with proper field types
+**Depends on**: Phase 1
+**Requirements**: SETT-01, SETT-02, SETT-03, SETT-04
+**Success Criteria** (what must be TRUE):
+  1. Merchant can configure POS ID, Auth Code, and SISP URL in WooCommerce payment settings
+  2. POS Auth Code field preserves special characters like `%` (no aggressive sanitization)
+  3. Currency setting defaults to CVE and auto-detects from WooCommerce order currency
+  4. Language setting switches between Portuguese and English
+**Plans**: TBD
+
+Plans:
+- [ ] 02-01: [TBD]
+- [ ] 02-02: [TBD]
+
+### Phase 3: Fingerprint & Request Builder
+**Goal**: Single canonical code path generates SISP-compliant fingerprints and payment request payloads
+**Depends on**: Phase 2
+**Requirements**: PAY-02, PAY-04, PAY-06, FP-01, FP-02
+**Success Criteria** (what must be TRUE):
+  1. Request fingerprint is generated using SHA-512 + Base64 with exact SISP field ordering
+  2. Amount in fingerprint hash is integer amount × 1000
+  3. Each payment attempt generates a unique merchantRef (e.g., `WC{order_id}-{timestamp}`) and merchantSession
+  4. purchaseRequest JSON does not include the deprecated `purchaseDate` field
+**Plans**: TBD
+
+Plans:
+- [ ] 03-01: [TBD]
+- [ ] 03-02: [TBD]
+
+### Phase 4: Payment Redirect Flow
+**Goal**: Shopper can complete checkout via SISP hosted redirect and return to a correctly-processed order
+**Depends on**: Phase 3
+**Requirements**: PAY-01, PAY-03, PAY-05
+**Success Criteria** (what must be TRUE):
+  1. Clicking "Place order" with Vinti4 selected redirects to a receipt/start page
+  2. The receipt page auto-posts the canonical payment data to SISP
+ 3. All request fields (fingerprint, timestamp, merchantRef, etc.) are stored on the order before redirect
+  4. Invalid configuration (missing POS ID/Auth Code/URL) shows an error instead of crashing
+**Plans**: TBD
+
+Plans:
+- [ ] 04-01: [TBD]
+- [ ] 04-02: [TBD]
+
+### Phase 5: Callback & Idempotency
+**Goal**: SISP callbacks are handled safely via WooCommerce API endpoint with full validation and duplicate protection
+**Depends on**: Phase 4
+**Requirements**: CB-01, CB-02, CB-03, CB-04, CB-05, FP-03
+**Success Criteria** (what must be TRUE):
+  1. A valid success callback completes the order exactly once via `payment_complete()`
+  2. An invalid fingerprint or mismatched merchantRef never completes the order
+ 3. A duplicate callback (second POST with same data) is safely rejected without mutating the order
+ 4. A failed callback marks the order failed and redirects the shopper back to checkout
+  5. No manual stock reduction or cart emptying occurs in the callback path
+**Plans**: TBD
+
+Plans:
+- [ ] 05-01: [TBD]
+- [ ] 05-02: [TBD]
+
+### Phase 6: Checkout Block Support
+**Goal**: Gateway appears and works in WooCommerce Cart and Checkout Blocks
+**Depends on**: Phase 2
+**Requirements**: BLK-01, BLK-02, BLK-03
+**Success Criteria** (what must be TRUE):
+  1. Vinti4 appears as a payment option in Checkout Block
+  2. Title and description render correctly from WooCommerce settings
+  3. Selecting Vinti4 in Checkout Block routes through the same `process_payment()` as classic checkout
+**Plans**: TBD
+
+Plans:
+- [ ] 06-01: [TBD]
+
+### Phase 7: Logging & Diagnostics
+**Goal**: Support can diagnose payment issues from logs without exposing sensitive data
+**Depends on**: Phase 3, Phase 5
+**Requirements**: LOG-01, LOG-02, LOG-03, FP-04
+**Success Criteria** (what must be TRUE):
+  1. Logs capture attempt ID, merchantRef, timestamp, and fingerprint input fields for every payment attempt
+  2. Logs capture callback receipt, validation result, and duplicate callback detection
+  3. Full POS auth code never appears in any log entry
+  4. Logs can distinguish between: request formation issue, fingerprint mismatch, duplicate callback, invalid amount, invalid reference
+**Plans**: TBD
+
+Plans:
+- [ ] 07-01: [TBD]
+
+### Phase 8: Testing & Certification Prep
+**Goal**: Unit tests verify fingerprint correctness and callback handling; certification checklist is mapped
+**Depends on**: Phase 3, Phase 5, Phase 7
+**Requirements**: (validation — no new functional requirements, but verifies existing ones)
+**Success Criteria** (what must be TRUE):
+  1. Request fingerprint unit test passes against known expected output
+  2. Response fingerprint unit test passes against known expected output
+  3. Duplicate callback test passes (second callback rejected safely)
+ 4. Invalid fingerprint callback test passes (order not completed)
+ 5. Certification checklist maps all SISP-required behaviors to test cases
+**Plans**: TBD
+
+Plans:
+- [ ] 08-01: [TBD]
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Safe Bootstrap | 0/2 | Not started | - |
+| 2. Gateway Settings | 0/2 | Not started | - |
+| 3. Fingerprint & Request Builder | 0/2 | Not started | - |
+| 4. Payment Redirect Flow | 0/2 | Not started | - |
+| 5. Callback & Idempotency | 0/2 | Not started | - |
+| 6. Checkout Block Support | 0/1 | Not started | - |
+| 7. Logging & Diagnostics | 0/1 | Not started | - |
+| 8. Testing & Certification Prep | 0/1 | Not started | - |

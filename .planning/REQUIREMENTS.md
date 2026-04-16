@@ -107,27 +107,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SETT-02 | Phase 2 | Pending |
 | SETT-03 | Phase 2 | Pending |
 | SETT-04 | Phase 2 | Pending |
-| PAY-01 | Phase 4 | Pending |
 | PAY-02 | Phase 3 | Pending |
-| PAY-03 | Phase 4 | Pending |
 | PAY-04 | Phase 3 | Pending |
-| PAY-05 | Phase 4 | Pending |
 | PAY-06 | Phase 3 | Pending |
 | FP-01 | Phase 3 | Pending |
 | FP-02 | Phase 3 | Pending |
-| FP-03 | Phase 5 | Pending |
-| FP-04 | Phase 7 | Pending |
+| PAY-01 | Phase 4 | Pending |
+| PAY-03 | Phase 4 | Pending |
+| PAY-05 | Phase 4 | Pending |
 | CB-01 | Phase 5 | Pending |
 | CB-02 | Phase 5 | Pending |
 | CB-03 | Phase 5 | Pending |
 | CB-04 | Phase 5 | Pending |
 | CB-05 | Phase 5 | Pending |
+| FP-03 | Phase 5 | Pending |
 | BLK-01 | Phase 6 | Pending |
 | BLK-02 | Phase 6 | Pending |
 | BLK-03 | Phase 6 | Pending |
 | LOG-01 | Phase 7 | Pending |
 | LOG-02 | Phase 7 | Pending |
 | LOG-03 | Phase 7 | Pending |
+| FP-04 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 27 total
@@ -136,4 +136,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after initial definition*
+*Last updated: 2026-04-16 after roadmap creation*
