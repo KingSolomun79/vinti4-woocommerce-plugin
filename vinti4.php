@@ -48,6 +48,12 @@ function vinti4_init() {
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-request-builder.php';
 	// Phase 7: require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
 	// Phase 6: require_once VINTI4_PLUGIN_DIR . 'includes/class-wc-vinti4-blocks-support.php';
+
+	// Register the vinti4-payment rewrite endpoint.
+	add_action( 'init', 'vinti4_add_rewrite_rules' );
+
+	// Intercept the vinti4-payment URL to render the payment form.
+	add_action( 'parse_request', 'vinti4_handle_payment_page' );
 }
 add_action( 'plugins_loaded', 'vinti4_init', 20 );
 
@@ -79,3 +85,53 @@ add_filter( 'woocommerce_payment_gateways', 'vinti4_add_gateway' );
 // add_action( 'plugins_loaded', function () {
 //     load_plugin_textdomain( 'vinti4', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 // } );
+
+/**
+ * Add rewrite rule for the Vinti4 payment page endpoint.
+ *
+ * Registers /vinti4-payment/ as a valid WordPress URL pattern
+ * that maps to index.php?vinti4_payment=1.
+ *
+ * @return void
+ */
+function vinti4_add_rewrite_rules() {
+	add_rewrite_rule(
+		'^vinti4-payment/?$',
+		'index.php?vinti4_payment=1',
+		'top'
+	);
+}
+
+/**
+ * Intercept the Vinti4 payment page request.
+ *
+ * When WordPress parses the vinti4_payment query variable (or the URI
+ * contains /vinti4-payment), this handler takes over the response.
+ *
+ * Phase 4 Plan 02 will implement the auto-posting payment form here.
+ * For now, we return 200 to prevent a 404.
+ *
+ * @param WP $wp The WordPress environment object.
+ * @return void
+ */
+function vinti4_handle_payment_page( $wp ) {
+	if ( ! isset( $wp->query_vars['vinti4_payment'] ) &&
+		strpos( $_SERVER['REQUEST_URI'] ?? '', '/vinti4-payment' ) === false ) {
+		return;
+	}
+
+	// Phase 4 Plan 02 will implement the form rendering here.
+	// For now, just return 200 to prevent 404.
+	status_header( 200 );
+}
+
+// Flush rewrite rules on plugin activation so the endpoint is recognized.
+register_activation_hook( VINTI4_PLUGIN_FILE, function () {
+	vinti4_add_rewrite_rules();
+	flush_rewrite_rules();
+});
+
+// Clean up rewrite rules on plugin deactivation.
+register_deactivation_hook( VINTI4_PLUGIN_FILE, function () {
+	flush_rewrite_rules();
+});
