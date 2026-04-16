@@ -324,14 +324,18 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 
 		// Store all attempt fields as order meta.
 		$order->update_meta_data( '_vinti4_attempt_id', $attempt['attempt_id'] );
-		$order->update_meta_data( '_vinti4_timestamp', $attempt['timestamp'] );
+		$order->update_meta_data( '_vinti4_timestamp', $attempt['timeStamp'] );
 		$order->update_meta_data( '_vinti4_merchant_ref', $attempt['merchant_ref'] );
 		$order->update_meta_data( '_vinti4_merchant_session', $attempt['merchant_session'] );
 		$order->update_meta_data( '_vinti4_transaction_code', $attempt['transaction_code'] );
 		$order->update_meta_data( '_vinti4_amount', $attempt['amount'] );
 		$order->update_meta_data( '_vinti4_currency', $attempt['currency'] );
+		$order->update_meta_data( '_vinti4_language_messages', $attempt['languageMessages'] );
+		$order->update_meta_data( '_vinti4_url_merchant_response', $attempt['urlMerchantResponse'] );
+		$order->update_meta_data( '_vinti4_is_3dsec', $attempt['is3DSec'] );
 		$order->update_meta_data( '_vinti4_purchase_request_b64', $attempt['purchase_request_b64'] );
-		$order->update_meta_data( '_vinti4_fingerprint', $attempt['fingerprint'] );
+		$order->update_meta_data( '_vinti4_fingerprint', $attempt['FingerPrint'] );
+		$order->update_meta_data( '_vinti4_fingerprint_version', $attempt['FingerPrintVersion'] );
 		$order->save();
 
 		// Build redirect URL to the Vinti4 payment page.
