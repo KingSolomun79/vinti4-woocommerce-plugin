@@ -191,6 +191,101 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Resolve the SISP middleware language field.
+	 *
+	 * Prefers the active WordPress locale when it maps cleanly to a supported
+	 * SISP language. Falls back to the saved gateway setting, then to Portuguese.
+	 *
+	 * @return string
+	 */
+	public function resolve_language_messages(): string {
+		$locale_candidates = array();
+
+		if ( function_exists( 'determine_locale' ) ) {
+			$locale_candidates[] = determine_locale();
+		}
+
+		if ( function_exists( 'get_locale' ) ) {
+			$locale_candidates[] = get_locale();
+		}
+
+		foreach ( $locale_candidates as $locale_candidate ) {
+			$language = $this->map_locale_to_language_messages( $locale_candidate );
+
+			if ( '' !== $language ) {
+				return $language;
+			}
+		}
+
+		$setting_language = $this->map_locale_to_language_messages( $this->language );
+
+		if ( '' !== $setting_language ) {
+			return $setting_language;
+		}
+
+		return 'pt';
+	}
+
+	/**
+	 * Build the callback URL SISP should return the shopper to.
+	 *
+	 * @return string
+	 */
+	public function get_url_merchant_response(): string {
+		if ( function_exists( 'WC' ) ) {
+			$woocommerce = WC();
+
+			if ( is_object( $woocommerce ) && method_exists( $woocommerce, 'api_request_url' ) ) {
+				return $woocommerce->api_request_url( $this->id );
+			}
+		}
+
+		return add_query_arg( 'wc-api', $this->id, home_url( '/' ) );
+	}
+
+	/**
+	 * Get the hosted 3DS flag expected by the SISP middleware.
+	 *
+	 * @return string
+	 */
+	public function get_is_3dsec_flag(): string {
+		return '1';
+	}
+
+	/**
+	 * Get the canonical outbound fingerprint version.
+	 *
+	 * @return string
+	 */
+	public function get_fingerprint_version(): string {
+		return '1';
+	}
+
+	/**
+	 * Map a locale or gateway setting value to the SISP language field.
+	 *
+	 * @param mixed $locale Locale-like value.
+	 * @return string
+	 */
+	private function map_locale_to_language_messages( $locale ): string {
+		if ( ! is_string( $locale ) || '' === $locale ) {
+			return '';
+		}
+
+		$normalized = strtolower( trim( $locale ) );
+
+		if ( 'pt' === $normalized || 0 === strpos( $normalized, 'pt_' ) || 0 === strpos( $normalized, 'pt-' ) ) {
+			return 'pt';
+		}
+
+		if ( 'en' === $normalized || 0 === strpos( $normalized, 'en_' ) || 0 === strpos( $normalized, 'en-' ) ) {
+			return 'en';
+		}
+
+		return '';
+	}
+
+	/**
 	 * Process the payment for a given order.
 	 *
 	 * Validates gateway configuration, builds a payment attempt via the request

@@ -47,18 +47,28 @@ class Vinti4_Request_Builder {
 	 *     @type string $transaction_code     Transaction code ('1' = Authorization).
 	 *     @type string $amount               Normalized integer amount.
 	 *     @type string $currency             ISO 4217 numeric currency code.
+	 *     @type string $languageMessages     Middleware language field ('pt' or 'en').
+	 *     @type string $urlMerchantResponse  Callback URL for the SISP response.
+	 *     @type string $is3DSec              Hosted 3DS flag expected by SISP.
+	 *     @type string $timeStamp            Transport timestamp for outbound middleware fields.
+	 *     @type string $FingerPrint          Transport fingerprint value for redirect handoff.
+	 *     @type string $FingerPrintVersion   Transport fingerprint version for redirect handoff.
 	 *     @type string $purchase_request_b64 Base64-encoded purchaseRequest JSON.
 	 *     @type string $fingerprint          SHA-512 + Base64 SISP fingerprint.
 	 * }
 	 */
 	public static function build_payment_attempt( WC_Order $order, WC_Gateway_Vinti4 $gateway ): array {
-		$timestamp        = vinti4_format_timestamp();
-		$attempt_id       = wp_generate_uuid4();
-		$merchant_ref     = vinti4_build_merchant_ref( $order->get_id() );
-		$merchant_session = vinti4_build_merchant_session();
-		$transaction_code = '1'; // Authorization.
-		$amount           = (string) vinti4_normalize_amount( (float) $order->get_total() );
-		$currency         = $gateway->get_currency_code( $order );
+		$timestamp             = vinti4_format_timestamp();
+		$attempt_id            = wp_generate_uuid4();
+		$merchant_ref          = vinti4_build_merchant_ref( $order->get_id() );
+		$merchant_session      = vinti4_build_merchant_session();
+		$transaction_code      = '1'; // Authorization.
+		$amount                = (string) vinti4_normalize_amount( (float) $order->get_total() );
+		$currency              = $gateway->get_currency_code( $order );
+		$language_messages     = $gateway->resolve_language_messages();
+		$url_merchant_response = $gateway->get_url_merchant_response();
+		$is_3dsec              = $gateway->get_is_3dsec_flag();
+		$fingerprint_version   = $gateway->get_fingerprint_version();
 
 		$purchase_request_json = self::build_purchase_request_json( $order );
 		$purchase_request_b64  = base64_encode(
@@ -80,17 +90,23 @@ class Vinti4_Request_Builder {
 		$result = array(
 			'attempt_id'           => $attempt_id,
 			'timestamp'            => $timestamp,
+			'timeStamp'            => $timestamp,
 			'merchant_ref'         => $merchant_ref,
 			'merchant_session'     => $merchant_session,
 			'transaction_code'     => $transaction_code,
 			'amount'               => $amount,
 			'currency'             => $currency,
+			'languageMessages'     => $language_messages,
+			'urlMerchantResponse'  => $url_merchant_response,
+			'is3DSec'              => $is_3dsec,
+			'FingerPrint'          => $fingerprint,
+			'FingerPrintVersion'   => $fingerprint_version,
 			'purchase_request_b64' => $purchase_request_b64,
 			'fingerprint'          => $fingerprint,
 		);
 
 		Vinti4_Logger::log( sprintf(
-			"Payment attempt built:\n  attempt_id: %s\n  order_id: %d\n  merchantRef: %s\n  merchantSession: %s\n  timestamp: %s\n  amount: %s\n  currency: %s\n  transaction_code: %s\n  posAuthCode (masked): %s\n  fingerprint: %s",
+			"Payment attempt built:\n  attempt_id: %s\n  order_id: %d\n  merchantRef: %s\n  merchantSession: %s\n  timeStamp: %s\n  amount: %s\n  currency: %s\n  transaction_code: %s\n  languageMessages: %s\n  urlMerchantResponse: %s\n  is3DSec: %s\n  posAuthCode (masked): %s\n  FingerPrintVersion: %s\n  FingerPrint: %s",
 			$attempt_id,
 			$order->get_id(),
 			$merchant_ref,
@@ -99,7 +115,11 @@ class Vinti4_Request_Builder {
 			$amount,
 			$currency,
 			$transaction_code,
+			$language_messages,
+			$url_merchant_response,
+			$is_3dsec,
 			Vinti4_Logger::mask_auth_code( $gateway->pos_auth_code ),
+			$fingerprint_version,
 			$fingerprint
 		) );
 
