@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 3 — Fingerprint & Request Builder
+**Current focus:** Phase 3 COMPLETE — Phase 4 (Redirect Flow) is next
 
 ## Current Position
 
-Phase: 3 of 8 (Fingerprint & Request Builder)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-04-16 — Completed 03-01 (Fingerprint & Formatting Helpers)
+Phase: 3 of 8 (Fingerprint & Request Builder) ✅
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-04-16 — Completed 03-02 (Request Builder & Bootstrap Wiring)
 
-Progress: ███░░░░░░░ 31%
+Progress: ████░░░░░░ 38%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: ~6 min
-- Total execution time: ~22 min
+- Total plans completed: 5
+- Average duration: ~5 min
+- Total execution time: ~24 min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: ███░░░░░░░ 31%
 |-------|-------|-------|----------|
 | 01-safe-bootstrap | 1 | ~17 min | ~17 min |
 | 02-gateway-settings | 2 | ~3 min | ~1.5 min |
-| 03-fingerprint-request-builder | 1 (of 2) | ~2 min | ~2 min |
+| 03-fingerprint-request-builder | 2 | ~4 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~17 min), 02-01 (~2 min), 02-02 (~1 min), 03-01 (~2 min)
+- Last 5 plans: 02-01 (~2 min), 02-02 (~1 min), 03-01 (~2 min), 03-02 (~2 min)
 - Trend: Stable and fast
 
 *Updated after each plan completion*
@@ -64,6 +64,11 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 03-01: Standalone functions (not class methods) for formatting helpers
 - 03-01: absint(round()) for amount normalization (PHP default rounding)
 - 03-01: Optional fingerprint fields appended only when non-empty (Yoda conditions)
+- 03-02: Static builder methods — no instance state needed
+- 03-02: UUID4 for attempt_id via wp_generate_uuid4()
+- 03-02: Transaction code hardcoded to '1' (Authorization)
+- 03-02: addrMatch compares address_1, city, postcode, country (not state)
+- 03-02: Phone block reuses billing phone for both work and mobile
 
 ### Pending Todos
 
@@ -76,5 +81,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 03-01-PLAN.md (Fingerprint & Formatting Helpers)
+Stopped at: Completed 03-02-PLAN.md (Request Builder & Bootstrap Wiring) — Phase 3 complete
 Resume file: None
