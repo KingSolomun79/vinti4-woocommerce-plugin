@@ -10,7 +10,7 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
 - [x] **Phase 2: Gateway Settings** ✓ - Gateway class with WooCommerce-native settings UI and configurable fields
 - [x] **Phase 3: Fingerprint & Request Builder** ✓ - Canonical fingerprint generation and payment request building with SISP compliance
 - [x] **Phase 4: Payment Redirect Flow** ✓ - Complete hosted redirect flow from checkout to SISP and back
-- [ ] **Phase 5: Callback & Idempotency** - WooCommerce-native callback endpoint with validation and duplicate protection
+- [x] **Phase 5: Callback & Idempotency** ✓ - WooCommerce-native callback endpoint with validation and duplicate protection
 - [ ] **Phase 6: Checkout Block Support** - Gateway registration and rendering in WooCommerce Cart/Checkout Blocks
 - [ ] **Phase 7: Logging & Diagnostics** - Structured debug logging with secret redaction for support
 - [ ] **Phase 8: Testing & Certification Prep** - Unit tests for fingerprint and callback, certification checklist mapping
@@ -86,12 +86,12 @@ Plans:
  3. A duplicate callback (second POST with same data) is safely rejected without mutating the order
  4. A failed callback marks the order failed and redirects the shopper back to checkout
   5. No manual stock reduction or cart emptying occurs in the callback path
-**Plans**: 3 plans
+**Plans**: 3 plans (complete)
 
 Plans:
-- [ ] 05-01-PLAN.md — Response fingerprint builder method + success message type checker
-- [ ] 05-02-PLAN.md — Callback handler class with full validation, idempotency, and outcome handling
-- [ ] 05-03-PLAN.md — Gateway wiring (hook activation + bootstrap include)
+- [x] 05-01-PLAN.md — Response fingerprint builder method + success message type checker
+- [x] 05-02-PLAN.md — Callback handler class with full validation, idempotency, and outcome handling
+- [x] 05-03-PLAN.md — Gateway wiring (hook activation + bootstrap include)
 
 ### Phase 6: Checkout Block Support
 **Goal**: Gateway appears and works in WooCommerce Cart and Checkout Blocks
@@ -146,7 +146,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 2. Gateway Settings | 2/2 | ✓ Complete | 2026-04-16 |
 | 3. Fingerprint & Request Builder | 2/2 | ✓ Complete | 2026-04-16 |
 | 4. Payment Redirect Flow | 2/2 | ✓ Complete | 2026-04-16 |
-| 5. Callback & Idempotency | 0/3 | Not started | - |
+| 5. Callback & Idempotency | 3/3 | ✓ Complete | 2026-04-16 |
 | 6. Checkout Block Support | 0/1 | Not started | - |
 | 7. Logging & Diagnostics | 0/1 | Not started | - |
 | 8. Testing & Certification Prep | 0/1 | Not started | - |

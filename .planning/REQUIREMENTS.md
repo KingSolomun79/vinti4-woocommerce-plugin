@@ -34,16 +34,16 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **FP-01**: Request fingerprint uses SHA-512 + Base64 with exact SISP field ordering
 - [x] **FP-02**: Amount in fingerprint hash = integer amount × 1000
-- [ ] **FP-03**: Response fingerprint validated before order completion (success message types: 8, 10, M, P)
+- [x] **FP-03**: Response fingerprint validated before order completion (success message types: 8, 10, M, P)
 - [ ] **FP-04**: Debug logs capture fingerprint inputs without exposing full POS auth code
 
 ### Callback Handling
 
-- [ ] **CB-01**: Callback handled via `woocommerce_api_{gateway_id}` endpoint (no standalone PHP files)
-- [ ] **CB-02**: Callback validates order exists, merchantRef matches, fingerprint is valid, amount matches
-- [ ] **CB-03**: Successful callback calls `payment_complete()` exactly once (no manual stock reduction)
-- [ ] **CB-04**: Duplicate callbacks are safely rejected (idempotency via `_vinti4_callback_processed` meta)
-- [ ] **CB-05**: Failed/invalid callback marks order failed and redirects shopper to checkout
+- [x] **CB-01**: Callback handled via `woocommerce_api_{gateway_id}` endpoint (no standalone PHP files)
+- [x] **CB-02**: Callback validates order exists, merchantRef matches, fingerprint is valid, amount matches
+- [x] **CB-03**: Successful callback calls `payment_complete()` exactly once (no manual stock reduction)
+- [x] **CB-04**: Duplicate callbacks are safely rejected (idempotency via `_vinti4_callback_processed` meta)
+- [x] **CB-05**: Failed/invalid callback marks order failed and redirects shopper to checkout
 
 ### Checkout Block
 
@@ -115,12 +115,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PAY-01 | Phase 4 | Complete |
 | PAY-03 | Phase 4 | Complete |
 | PAY-05 | Phase 4 | Complete |
-| CB-01 | Phase 5 | Pending |
-| CB-02 | Phase 5 | Pending |
-| CB-03 | Phase 5 | Pending |
-| CB-04 | Phase 5 | Pending |
-| CB-05 | Phase 5 | Pending |
-| FP-03 | Phase 5 | Pending |
+| CB-01 | Phase 5 | Complete |
+| CB-02 | Phase 5 | Complete |
+| CB-03 | Phase 5 | Complete |
+| CB-04 | Phase 5 | Complete |
+| CB-05 | Phase 5 | Complete |
+| FP-03 | Phase 5 | Complete |
 | BLK-01 | Phase 6 | Pending |
 | BLK-02 | Phase 6 | Pending |
 | BLK-03 | Phase 6 | Pending |
@@ -136,4 +136,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after Phase 4 completion*
+*Last updated: 2026-04-16 after Phase 5 completion*
