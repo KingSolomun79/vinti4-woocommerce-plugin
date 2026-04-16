@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 2 — Gateway Settings
+**Current focus:** Phase 3 — Fingerprint (next up)
 
 ## Current Position
 
-Phase: 2 of 8 (Gateway Settings)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-04-16 — Completed 02-01-PLAN.md (Gateway Settings Fields)
+Phase: 2 of 8 (Gateway Settings) — **COMPLETE**
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-04-16 — Completed 02-02-PLAN.md (Currency Helper Method)
 
-Progress: ███░░░░░░░ 25%
+Progress: ████░░░░░░ 38%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: ~10 min
-- Total execution time: ~19 min
+- Total plans completed: 3
+- Average duration: ~7 min
+- Total execution time: ~20 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-safe-bootstrap | 1 | ~17 min | ~17 min |
-| 02-gateway-settings | 1 | ~2 min | ~2 min |
+| 02-gateway-settings | 2 | ~3 min | ~1.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~17 min), 02-01 (~2 min)
+- Last 5 plans: 01-01 (~17 min), 02-01 (~2 min), 02-02 (~1 min)
 - Trend: Accelerating
 
 *Updated after each plan completion*
@@ -57,6 +57,9 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 01-01: process_payment() stub returns failure (safe default)
 - 02-01: Auth code sanitization via wp_unslash() only (preserve % + / =)
 - 02-01: Sandbox-first default for vbv2_url (test URL by default)
+- 02-02: Static currency map (no Composer) with 6 currencies: CVE, EUR, USD, AOA, BRL, GBP
+- 02-02: Triple fallback chain: order currency → currency_default setting → hardcoded CVE ('132')
+- 02-02: String return type for SISP protocol compatibility
 
 ### Pending Todos
 
@@ -69,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 02-01-PLAN.md (Gateway Settings Fields)
+Stopped at: Completed 02-02-PLAN.md (Currency Helper Method) — Phase 2 complete
 Resume file: None
