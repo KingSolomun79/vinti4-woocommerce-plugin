@@ -57,6 +57,8 @@ class Vinti4_Callback_Handler {
 		// phpcs:ignore WordPress.Security.NonceVerification -- SISP is an external server, no nonce.
 		$post = $_POST;
 
+		Vinti4_Logger::log( 'Callback received from SISP.' );
+
 		$message_type              = isset( $post['messageType'] ) ? sanitize_text_field( wp_unslash( $post['messageType'] ) ) : '';
 		$result_fingerprint        = isset( $post['resultFingerPrint'] ) ? sanitize_text_field( wp_unslash( $post['resultFingerPrint'] ) ) : '';
 		$merchant_ref              = isset( $post['merchantRespMerchantRef'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespMerchantRef'] ) ) : '';
@@ -78,6 +80,7 @@ class Vinti4_Callback_Handler {
 
 		// Require essential fields — cannot proceed without merchantRef and fingerprint.
 		if ( empty( $merchant_ref ) || empty( $result_fingerprint ) ) {
+			Vinti4_Logger::log( 'Callback rejected: missing merchantRef or resultFingerprint.', 'warning' );
 			wp_die( esc_html__( 'Invalid callback data.', 'vinti4' ) );
 		}
 
@@ -85,12 +88,14 @@ class Vinti4_Callback_Handler {
 		$order_id = vinti4_parse_order_id_from_ref( $merchant_ref );
 
 		if ( 0 === $order_id ) {
+			Vinti4_Logger::log( sprintf( 'Callback rejected: could not parse order ID from merchantRef "%s".', $merchant_ref ), 'warning' );
 			wp_die( esc_html__( 'Invalid merchant reference.', 'vinti4' ), '', array( 'response' => 400 ) );
 		}
 
 		$order = wc_get_order( $order_id );
 
 		if ( ! $order ) {
+			Vinti4_Logger::log( sprintf( 'Callback rejected: order %d not found.', $order_id ), 'error' );
 			wp_die( esc_html__( 'Order not found.', 'vinti4' ), '', array( 'response' => 404 ) );
 		}
 
@@ -99,6 +104,7 @@ class Vinti4_Callback_Handler {
 
 		if ( $stored_ref !== $merchant_ref ) {
 			// Callback is for a different payment attempt.
+			Vinti4_Logger::log( sprintf( 'Callback rejected: merchantRef mismatch. Stored: "%s", Received: "%s".', $stored_ref, $merchant_ref ), 'warning' );
 			wp_safe_redirect( wc_get_checkout_url() );
 			exit;
 		}
@@ -108,6 +114,7 @@ class Vinti4_Callback_Handler {
 
 		if ( $already_processed ) {
 			// Already handled — redirect to the appropriate page without mutating the order.
+			Vinti4_Logger::log( sprintf( 'Duplicate callback detected for order %d (already processed). Redirecting.', $order_id ) );
 			if ( in_array( $order->get_status(), array( 'processing', 'completed' ), true ) ) {
 				wp_safe_redirect( $order->get_checkout_order_received_url() );
 				exit;
@@ -141,6 +148,7 @@ class Vinti4_Callback_Handler {
 			);
 
 			if ( $expected_fingerprint !== $result_fingerprint ) {
+				Vinti4_Logger::log( sprintf( 'Callback rejected for order %d: fingerprint mismatch. merchantRef: %s, messageType: %s.', $order_id, $merchant_ref, $message_type ), 'error' );
 				$order->update_status( 'failed', __( 'Vinti4 fingerprint validation failed.', 'vinti4' ) );
 				self::mark_processed_and_redirect( $order, wc_get_checkout_url() );
 			}
@@ -150,6 +158,7 @@ class Vinti4_Callback_Handler {
 			$response_amount = (int) $purchase_amount;
 
 			if ( $stored_amount !== $response_amount ) {
+				Vinti4_Logger::log( sprintf( 'Callback rejected for order %d: amount mismatch. Stored: %d, Response: %d.', $order_id, $stored_amount, $response_amount ), 'error' );
 				$order->update_status( 'failed', __( 'Vinti4 amount mismatch.', 'vinti4' ) );
 				self::mark_processed_and_redirect( $order, wc_get_checkout_url() );
 			}
@@ -158,6 +167,7 @@ class Vinti4_Callback_Handler {
 			// payment_complete() handles stock reduction, cart emptying, and status transition.
 			// Do NOT call reduce_order_stock(), empty_cart(), or update_status('completed').
 			$order->payment_complete( $transaction_id );
+			Vinti4_Logger::log( sprintf( 'Payment completed for order %d. TID: %s, merchantRef: %s, messageType: %s.', $order_id, $transaction_id, $merchant_ref, $message_type ) );
 			$order->add_order_note(
 				sprintf(
 					/* translators: %s: SISP transaction ID */
@@ -169,6 +179,7 @@ class Vinti4_Callback_Handler {
 		}
 
 		// Step 9 — Mark order failed.
+		Vinti4_Logger::log( sprintf( 'Payment failed for order %d. messageType: %s, errorDetail: %s, errorDescription: %s.', $order_id, $message_type, $error_detail, $error_description ), 'warning' );
 		$order->update_status(
 			'failed',
 			sprintf(
