@@ -7,7 +7,7 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
 ## Phases
 
 - [x] **Phase 1: Safe Bootstrap** ✓ - Plugin activates safely on modern WooCommerce with dependency guards and proper gateway registration
-- [ ] **Phase 2: Gateway Settings** - Gateway class with WooCommerce-native settings UI and configurable fields
+- [x] **Phase 2: Gateway Settings** ✓ - Gateway class with WooCommerce-native settings UI and configurable fields
 - [ ] **Phase 3: Fingerprint & Request Builder** - Canonical fingerprint generation and payment request building with SISP compliance
 - [ ] **Phase 4: Payment Redirect Flow** - Complete hosted redirect flow from checkout to SISP and back
 - [ ] **Phase 5: Callback & Idempotency** - WooCommerce-native callback endpoint with validation and duplicate protection
@@ -43,8 +43,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Add 6 gateway settings fields (POS ID, Auth Code, SISP URL, language, debug, currency_default) with custom sanitization for Auth Code
-- [ ] 02-02-PLAN.md — Add get_currency_code() method with order auto-detect and ISO 4217 numeric code mapping
+- [x] 02-01-PLAN.md — Add 6 gateway settings fields (POS ID, Auth Code, SISP URL, language, debug, currency_default) with custom sanitization for Auth Code
+- [x] 02-02-PLAN.md — Add get_currency_code() method with order auto-detect and ISO 4217 numeric code mapping
 
 ### Phase 3: Fingerprint & Request Builder
 **Goal**: Single canonical code path generates SISP-compliant fingerprints and payment request payloads
@@ -142,7 +142,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Safe Bootstrap | 1/1 | ✓ Complete | 2026-04-16 |
-| 2. Gateway Settings | 0/2 | Not started | - |
+| 2. Gateway Settings | 2/2 | ✓ Complete | 2026-04-16 |
 | 3. Fingerprint & Request Builder | 0/2 | Not started | - |
 | 4. Payment Redirect Flow | 0/2 | Not started | - |
 | 5. Callback & Idempotency | 0/2 | Not started | - |

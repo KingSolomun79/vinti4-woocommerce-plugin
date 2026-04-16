@@ -16,10 +16,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Gateway Settings
 
-- [ ] **SETT-01**: Gateway configurable in WooCommerce → Settings → Payments (not separate admin menu)
-- [ ] **SETT-02**: Settings include: enabled, title, description, POS ID, POS Auth Code, SISP URL, language (pt/en), debug toggle
-- [ ] **SETT-03**: POS Auth Code field preserves valid characters (no aggressive sanitization)
-- [ ] **SETT-04**: Currency auto-detected from WooCommerce order currency with configurable default (CVE)
+- [x] **SETT-01**: Gateway configurable in WooCommerce → Settings → Payments (not separate admin menu)
+- [x] **SETT-02**: Settings include: enabled, title, description, POS ID, POS Auth Code, SISP URL, language (pt/en), debug toggle
+- [x] **SETT-03**: POS Auth Code field preserves valid characters (no aggressive sanitization)
+- [x] **SETT-04**: Currency auto-detected from WooCommerce order currency with configurable default (CVE)
 
 ### Payment Flow
 
@@ -103,10 +103,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BOOT-02 | Phase 1 | Complete |
 | BOOT-03 | Phase 1 | Complete |
 | BOOT-04 | Phase 1 | Complete |
-| SETT-01 | Phase 2 | Pending |
-| SETT-02 | Phase 2 | Pending |
-| SETT-03 | Phase 2 | Pending |
-| SETT-04 | Phase 2 | Pending |
+| SETT-01 | Phase 2 | Complete |
+| SETT-02 | Phase 2 | Complete |
+| SETT-03 | Phase 2 | Complete |
+| SETT-04 | Phase 2 | Complete |
 | PAY-02 | Phase 3 | Pending |
 | PAY-04 | Phase 3 | Pending |
 | PAY-06 | Phase 3 | Pending |
