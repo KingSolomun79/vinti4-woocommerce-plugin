@@ -8,7 +8,7 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
 
 - [x] **Phase 1: Safe Bootstrap** ✓ - Plugin activates safely on modern WooCommerce with dependency guards and proper gateway registration
 - [x] **Phase 2: Gateway Settings** ✓ - Gateway class with WooCommerce-native settings UI and configurable fields
-- [ ] **Phase 3: Fingerprint & Request Builder** - Canonical fingerprint generation and payment request building with SISP compliance
+- [x] **Phase 3: Fingerprint & Request Builder** ✓ - Canonical fingerprint generation and payment request building with SISP compliance
 - [ ] **Phase 4: Payment Redirect Flow** - Complete hosted redirect flow from checkout to SISP and back
 - [ ] **Phase 5: Callback & Idempotency** - WooCommerce-native callback endpoint with validation and duplicate protection
 - [ ] **Phase 6: Checkout Block Support** - Gateway registration and rendering in WooCommerce Cart/Checkout Blocks
@@ -55,11 +55,11 @@ Plans:
   2. Amount in fingerprint hash is integer amount × 1000
   3. Each payment attempt generates a unique merchantRef (e.g., `WC{order_id}-{timestamp}`) and merchantSession
   4. purchaseRequest JSON does not include the deprecated `purchaseDate` field
-**Plans**: 2 plans
+**Plans**: 2 plans (complete)
 
 Plans:
-- [ ] 03-01-PLAN.md — Create Vinti4_Fingerprint class (SHA-512 + Base64) and formatting helper functions
-- [ ] 03-02-PLAN.md — Create Vinti4_Request_Builder class (canonical payment attempt builder) and wire Phase 3 requires
+- [x] 03-01-PLAN.md — Create Vinti4_Fingerprint class (SHA-512 + Base64) and formatting helper functions
+- [x] 03-02-PLAN.md — Create Vinti4_Request_Builder class (canonical payment attempt builder) and wire Phase 3 requires
 
 ### Phase 4: Payment Redirect Flow
 **Goal**: Shopper can complete checkout via SISP hosted redirect and return to a correctly-processed order
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 1. Safe Bootstrap | 1/1 | ✓ Complete | 2026-04-16 |
 | 2. Gateway Settings | 2/2 | ✓ Complete | 2026-04-16 |
-| 3. Fingerprint & Request Builder | 0/2 | Not started | - |
+| 3. Fingerprint & Request Builder | 2/2 | ✓ Complete | 2026-04-16 |
 | 4. Payment Redirect Flow | 0/2 | Not started | - |
 | 5. Callback & Idempotency | 0/2 | Not started | - |
 | 6. Checkout Block Support | 0/1 | Not started | - |

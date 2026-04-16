@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 3 COMPLETE — Phase 4 (Redirect Flow) is next
+**Current focus:** Phase 4 — Payment Redirect Flow
 
 ## Current Position
 
-Phase: 3 of 8 (Fingerprint & Request Builder) ✅
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-04-16 — Completed 03-02 (Request Builder & Bootstrap Wiring)
+Phase: 4 of 8 (Payment Redirect Flow)
+Plan: 0 of 2 in current phase
+Status: Ready to plan
+Last activity: 2026-04-16 — Phase 3 executed and verified (4/4 must-haves passed)
 
 Progress: ████░░░░░░ 38%
 

@@ -24,16 +24,16 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Payment Flow
 
 - [ ] **PAY-01**: `process_payment()` validates config and creates a canonical payment attempt
-- [ ] **PAY-02**: Request fingerprint generated from a single canonical code path only
+- [x] **PAY-02**: Request fingerprint generated from a single canonical code path only
 - [ ] **PAY-03**: All request fields stored on the order as meta before redirect
-- [ ] **PAY-04**: Each payment attempt generates unique `merchantRef` and `merchantSession`
+- [x] **PAY-04**: Each payment attempt generates unique `merchantRef` and `merchantSession`
 - [ ] **PAY-05**: Shopper is redirected to a receipt/start page that auto-posts to SISP
-- [ ] **PAY-06**: purchaseRequest JSON excludes deprecated `purchaseDate` field
+- [x] **PAY-06**: purchaseRequest JSON excludes deprecated `purchaseDate` field
 
 ### Fingerprint
 
-- [ ] **FP-01**: Request fingerprint uses SHA-512 + Base64 with exact SISP field ordering
-- [ ] **FP-02**: Amount in fingerprint hash = integer amount × 1000
+- [x] **FP-01**: Request fingerprint uses SHA-512 + Base64 with exact SISP field ordering
+- [x] **FP-02**: Amount in fingerprint hash = integer amount × 1000
 - [ ] **FP-03**: Response fingerprint validated before order completion (success message types: 8, 10, M, P)
 - [ ] **FP-04**: Debug logs capture fingerprint inputs without exposing full POS auth code
 
@@ -107,11 +107,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SETT-02 | Phase 2 | Complete |
 | SETT-03 | Phase 2 | Complete |
 | SETT-04 | Phase 2 | Complete |
-| PAY-02 | Phase 3 | Pending |
-| PAY-04 | Phase 3 | Pending |
-| PAY-06 | Phase 3 | Pending |
-| FP-01 | Phase 3 | Pending |
-| FP-02 | Phase 3 | Pending |
+| PAY-02 | Phase 3 | Complete |
+| PAY-04 | Phase 3 | Complete |
+| PAY-06 | Phase 3 | Complete |
+| FP-01 | Phase 3 | Complete |
+| FP-02 | Phase 3 | Complete |
 | PAY-01 | Phase 4 | Pending |
 | PAY-03 | Phase 4 | Pending |
 | PAY-05 | Phase 4 | Pending |
