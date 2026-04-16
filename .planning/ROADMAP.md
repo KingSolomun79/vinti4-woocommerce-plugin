@@ -17,7 +17,7 @@ Focused follow-up milestone to resolve the two live blockers found during real W
 
 Plans:
 - [x] 09-01-PLAN.md - Canonicalize the full SISP middleware request contract in the server-side payment attempt
-- [ ] 09-02-PLAN.md - Render the corrected browser payload and add regression coverage for request shape and secret exposure
+- [x] 09-02-PLAN.md - Render the corrected browser payload and add regression coverage for request shape and secret exposure
 - [ ] 09-03-PLAN.md - Verify the fix in a real WooCommerce sandbox checkout flow
 
 **Details:**
@@ -95,7 +95,7 @@ Clean up stray files, restore proper WordPress packaging metadata, re-enable or 
 | 6. Checkout Block Support | v1.0 | 1/1 | ✓ Complete | 2026-04-16 |
 | 7. Logging & Diagnostics | v1.0 | 2/2 | ✓ Complete | 2026-04-16 |
 | 8. Testing & Certification Prep | v1.0 | 2/2 | ✓ Complete | 2026-04-16 |
-| 9. SISP Request Language and Required Fields | v1.1 | 1/3 | In progress | - |
+| 9. SISP Request Language and Required Fields | v1.1 | 2/3 | In progress | - |
 | 10. WooCommerce Feature Compatibility Declarations | v1.1 | 0/0 | Planned | - |
 | 11. Callback Fingerprint Validation Hardening | v1.1 | 0/0 | Planned | - |
 | 12. Currency and Amount Handling Correction | v1.1 | 0/0 | Planned | - |
