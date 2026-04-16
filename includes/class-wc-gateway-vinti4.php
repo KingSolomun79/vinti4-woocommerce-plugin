@@ -46,9 +46,6 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 	/**
 	 * Define admin-facing settings fields.
 	 *
-	 * Phase 1: Minimal fields. Phase 2 adds pos_id, pos_auth_code, vbv2_url,
-	 * language, debug, currency_default.
-	 *
 	 * @return void
 	 */
 	public function init_form_fields() {
@@ -71,6 +68,59 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 				'type'        => 'textarea',
 				'description' => __( 'This controls the description which the user sees during checkout.', 'vinti4' ),
 				'default'     => __( 'You will be redirected to Vinti4 to complete payment.', 'vinti4' ),
+				'desc_tip'    => true,
+			),
+			'pos_id'          => array(
+				'title'       => __( 'POS ID', 'vinti4' ),
+				'type'        => 'text',
+				'description' => __( 'Your POS identifier provided by SISP.', 'vinti4' ),
+				'default'     => '',
+				'desc_tip'    => true,
+			),
+			'pos_auth_code'   => array(
+				'title'             => __( 'POS Auth Code', 'vinti4' ),
+				'type'              => 'text',
+				'description'       => __( 'Authentication code from SISP. Special characters are preserved exactly as entered.', 'vinti4' ),
+				'default'           => '',
+				'desc_tip'          => true,
+				'custom_attributes' => array( 'autocomplete' => 'off' ),
+			),
+			'vbv2_url'        => array(
+				'title'       => __( 'SISP Payment URL', 'vinti4' ),
+				'type'        => 'text',
+				'description' => __( 'URL of the SISP 3DS payment page. Use the test URL for sandbox mode.', 'vinti4' ),
+				'default'     => 'https://3dsteste.vinti4net.cv/3ds_middleware_php/public/3ds_init.php',
+				'desc_tip'    => true,
+			),
+			'language'        => array(
+				'title'       => __( 'Language', 'vinti4' ),
+				'type'        => 'select',
+				'description' => __( 'Language for the SISP payment page.', 'vinti4' ),
+				'default'     => 'pt',
+				'options'     => array(
+					'pt' => __( 'Portuguese', 'vinti4' ),
+					'en' => __( 'English', 'vinti4' ),
+				),
+				'desc_tip'    => true,
+			),
+			'debug'           => array(
+				'title'       => __( 'Debug Mode', 'vinti4' ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Enable logging', 'vinti4' ),
+				'description' => __( 'Log payment events for debugging. Do not enable in production.', 'vinti4' ),
+				'default'     => 'no',
+				'desc_tip'    => true,
+			),
+			'currency_default' => array(
+				'title'       => __( 'Default Currency', 'vinti4' ),
+				'type'        => 'select',
+				'description' => __( 'Currency used when auto-detection from the order is not possible. Auto-detection uses the WooCommerce order currency.', 'vinti4' ),
+				'default'     => 'CVE',
+				'options'     => array(
+					'CVE' => __( 'CVE — Cape Verdean Escudo', 'vinti4' ),
+					'EUR' => __( 'EUR — Euro', 'vinti4' ),
+					'USD' => __( 'USD — US Dollar', 'vinti4' ),
+				),
 				'desc_tip'    => true,
 			),
 		);
