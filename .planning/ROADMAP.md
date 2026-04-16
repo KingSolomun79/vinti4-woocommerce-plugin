@@ -13,7 +13,7 @@ Complete rewrite of the Vinti4 WooCommerce payment gateway from a brittle legacy
 - [x] **Phase 5: Callback & Idempotency** ✓ - WooCommerce-native callback endpoint with validation and duplicate protection
 - [x] **Phase 6: Checkout Block Support** ✓ - Gateway registration and rendering in WooCommerce Cart/Checkout Blocks
 - [x] **Phase 7: Logging & Diagnostics** ✓ - Structured debug logging with secret redaction for support
-- [ ] **Phase 8: Testing & Certification Prep** - Unit tests for fingerprint and callback, certification checklist mapping
+- [x] **Phase 8: Testing & Certification Prep** ✓ - Unit tests for fingerprint and callback, certification checklist mapping
 
 ## Phase Details
 
@@ -131,11 +131,11 @@ Plans:
   3. Duplicate callback test passes (second callback rejected safely)
  4. Invalid fingerprint callback test passes (order not completed)
  5. Certification checklist maps all SISP-required behaviors to test cases
-**Plans:** 2 plans
+**Plans:** 2 plans (complete)
 
 Plans:
-- [ ] 08-01-PLAN.md — PHPUnit infrastructure + pure PHP unit tests (fingerprint, formatting, logger mask)
-- [ ] 08-02-PLAN.md — Admin diagnostic panel + certification checklist
+- [x] 08-01-PLAN.md — PHPUnit infrastructure + pure PHP unit tests (fingerprint, formatting, logger mask)
+- [x] 08-02-PLAN.md — Admin diagnostic panel + certification checklist
 
 ## Progress
 
@@ -151,4 +151,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Callback & Idempotency | 3/3 | ✓ Complete | 2026-04-16 |
 | 6. Checkout Block Support | 1/1 | ✓ Complete | 2026-04-16 |
 | 7. Logging & Diagnostics | 2/2 | ✓ Complete | 2026-04-16 |
-| 8. Testing & Certification Prep | 0/2 | Not started | - |
+| 8. Testing & Certification Prep | 2/2 | ✓ Complete | 2026-04-16 |
