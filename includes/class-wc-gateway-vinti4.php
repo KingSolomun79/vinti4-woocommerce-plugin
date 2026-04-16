@@ -47,6 +47,9 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 
 		// Callback handler for SISP response.
 		add_action( 'woocommerce_api_' . $this->id, array( $this, 'handle_callback' ) );
+
+		// Initialize logger with current debug setting.
+		Vinti4_Logger::init( $this );
 	}
 
 	/**
