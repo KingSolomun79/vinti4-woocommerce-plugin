@@ -46,6 +46,7 @@ function vinti4_init() {
 	require_once VINTI4_PLUGIN_DIR . 'includes/functions-vinti4-formatting.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-fingerprint.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-request-builder.php';
+	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-redirect-form.php';
 	// Phase 7: require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
 	// Phase 6: require_once VINTI4_PLUGIN_DIR . 'includes/class-wc-vinti4-blocks-support.php';
 
@@ -106,10 +107,8 @@ function vinti4_add_rewrite_rules() {
  * Intercept the Vinti4 payment page request.
  *
  * When WordPress parses the vinti4_payment query variable (or the URI
- * contains /vinti4-payment), this handler takes over the response.
- *
- * Phase 4 Plan 02 will implement the auto-posting payment form here.
- * For now, we return 200 to prevent a 404.
+ * contains /vinti4-payment), delegates to Vinti4_Redirect_Form::render()
+ * which validates the order/key params and outputs the auto-submit form.
  *
  * @param WP $wp The WordPress environment object.
  * @return void
@@ -120,9 +119,7 @@ function vinti4_handle_payment_page( $wp ) {
 		return;
 	}
 
-	// Phase 4 Plan 02 will implement the form rendering here.
-	// For now, just return 200 to prevent 404.
-	status_header( 200 );
+	Vinti4_Redirect_Form::render();
 }
 
 // Flush rewrite rules on plugin activation so the endpoint is recognized.
