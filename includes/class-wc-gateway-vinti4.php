@@ -50,6 +50,12 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 
 		// Initialize logger with current debug setting.
 		Vinti4_Logger::init( $this );
+
+		// Load admin test panel in admin context only.
+		if ( is_admin() ) {
+			require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-test-panel.php';
+			Vinti4_Admin_Test_Panel::register();
+		}
 	}
 
 	/**
