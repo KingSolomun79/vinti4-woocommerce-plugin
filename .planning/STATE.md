@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 4 — Payment Redirect Flow
+**Current focus:** Phase 4 — Payment Redirect Flow (complete)
 
 ## Current Position
 
 Phase: 4 of 8 (Payment Redirect Flow)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-04-16 — Completed 04-01-PLAN.md (process_payment + rewrite endpoint)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-04-16 — Completed 04-02-PLAN.md (redirect form renderer)
 
-Progress: █████░░░░░ 43%
+Progress: █████░░░░░ 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: ~5 min
-- Total execution time: ~29 min
+- Total execution time: ~33 min
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: █████░░░░░ 43%
 | 01-safe-bootstrap | 1 | ~17 min | ~17 min |
 | 02-gateway-settings | 2 | ~3 min | ~1.5 min |
 | 03-fingerprint-request-builder | 2 | ~4 min | ~2 min |
-| 04-payment-redirect-flow | 1 | ~5 min | ~5 min |
+| 04-payment-redirect-flow | 2 | ~9 min | ~4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (~1 min), 03-01 (~2 min), 03-02 (~2 min), 04-01 (~5 min)
+- Last 5 plans: 03-01 (~2 min), 03-02 (~2 min), 04-01 (~5 min), 04-02 (~4 min)
 - Trend: Stable and fast
 
 *Updated after each plan completion*
@@ -75,6 +75,10 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 04-01: Dual query args on redirect URL (order ID + order key for security)
 - 04-01: parse_request with URI fallback for rewrite rule edge cases
 - 04-01: Placeholder handler for form rendering (deferred to 04-02)
+- 04-02: posAuthCode sent raw in POST form (not hashed — SISP expects raw value)
+- 04-02: Standalone HTML document with exit() to bypass WordPress theming
+- 04-02: Order key validation prevents unauthorized payment form access
+- 04-02: Gateway null guard renders error if Vinti4 gateway unavailable
 
 ### Pending Todos
 
@@ -87,5 +91,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed 04-01-PLAN.md
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
