@@ -39,6 +39,109 @@ if ( class_exists( 'Vinti4_Fingerprint' ) ) {
 class Vinti4_Fingerprint {
 
 	/**
+	 * Build a safe, field-by-field snapshot of request fingerprint inputs.
+	 *
+	 * This helper is intended for debug logging only. It never returns the raw
+	 * POS auth code nor the full SHA-512 auth hash that participates in the
+	 * fingerprint algorithm.
+	 *
+	 * @param string $pos_auth_code    POS auth code.
+	 * @param string $timestamp        Timestamp.
+	 * @param string $amount           Amount before x1000 scaling.
+	 * @param string $merchant_ref     Merchant reference.
+	 * @param string $merchant_session Merchant session.
+	 * @param string $pos_id           POS identifier.
+	 * @param string $currency         Currency code.
+	 * @param string $transaction_code Transaction code.
+	 * @param string $entity_code      Optional entity code.
+	 * @param string $reference_number Optional reference number.
+	 * @param string $token            Optional token.
+	 * @return array<string, mixed>
+	 */
+	public static function build_request_fingerprint_debug_snapshot(
+		string $pos_auth_code,
+		string $timestamp,
+		string $amount,
+		string $merchant_ref,
+		string $merchant_session,
+		string $pos_id,
+		string $currency,
+		string $transaction_code,
+		string $entity_code = '',
+		string $reference_number = '',
+		string $token = ''
+	): array {
+		$auth_hash_b64      = self::sha512_base64( $pos_auth_code );
+		$amount_x1000       = (string) ( absint( $amount ) * 1000 );
+		$entity_normalized  = '';
+		$reference_normalized = '';
+		$token_normalized   = '';
+
+		if ( '' !== $entity_code ) {
+			$entity_normalized = (string) absint( ltrim( $entity_code, '0' ) ?: '0' );
+		}
+
+		if ( '' !== $reference_number ) {
+			$reference_normalized = (string) absint( ltrim( $reference_number, '0' ) ?: '0' );
+		}
+
+		if ( '' !== $token ) {
+			$token_normalized = trim( $token );
+		}
+
+		$segments = array(
+			'[SHA512_B64(posAuthCode)]',
+			trim( $timestamp ),
+			$amount_x1000,
+			trim( $merchant_ref ),
+			trim( $merchant_session ),
+			trim( $pos_id ),
+			trim( $currency ),
+			trim( $transaction_code ),
+		);
+
+		if ( '' !== $entity_normalized ) {
+			$segments[] = $entity_normalized;
+		}
+
+		if ( '' !== $reference_normalized ) {
+			$segments[] = $reference_normalized;
+		}
+
+		if ( '' !== $token_normalized ) {
+			$segments[] = $token_normalized;
+		}
+
+		return array(
+			'algorithm' => 'sha512_base64( sha512_base64(posAuthCode) + ordered fields )',
+			'sensitive' => array(
+				'posAuthCode' => array(
+					'length'               => strlen( $pos_auth_code ),
+					'sha512_b64_preview'   => substr( $auth_hash_b64, 0, 12 ) . '...',
+					'raw_exposed'          => false,
+				),
+			),
+			'fields' => array(
+				'timestamp' => trim( $timestamp ),
+				'amount' => array(
+					'raw' => trim( $amount ),
+					'normalized_x1000' => $amount_x1000,
+				),
+				'merchantRef' => trim( $merchant_ref ),
+				'merchantSession' => trim( $merchant_session ),
+				'posID' => trim( $pos_id ),
+				'currency' => trim( $currency ),
+				'transactionCode' => trim( $transaction_code ),
+				'entityCode' => '' === $entity_normalized ? null : $entity_normalized,
+				'referenceNumber' => '' === $reference_normalized ? null : $reference_normalized,
+				'token' => '' === $token_normalized ? null : '[present]',
+			),
+			'ordered_segments' => $segments,
+			'segment_count' => count( $segments ),
+		);
+	}
+
+	/**
 	 * Compute SHA-512 hash and return as Base64-encoded string.
 	 *
 	 * This is the core hash primitive used in the SISP fingerprint algorithm.

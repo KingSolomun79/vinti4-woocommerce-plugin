@@ -87,6 +87,18 @@ class Vinti4_Request_Builder {
 			'', '', ''
 		);
 
+		$fingerprint_debug_snapshot = Vinti4_Fingerprint::build_request_fingerprint_debug_snapshot(
+			$gateway->pos_auth_code,
+			$timestamp,
+			$amount,
+			$merchant_ref,
+			$merchant_session,
+			$gateway->pos_id,
+			$currency,
+			$transaction_code,
+			'', '', ''
+		);
+
 		$result = array(
 			'attempt_id'           => $attempt_id,
 			'timestamp'            => $timestamp,
@@ -122,6 +134,13 @@ class Vinti4_Request_Builder {
 			$fingerprint_version,
 			$fingerprint
 		) );
+
+		Vinti4_Logger::log(
+			'Fingerprint request canonical snapshot: ' . wp_json_encode(
+				$fingerprint_debug_snapshot,
+				JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+			)
+		);
 
 		return $result;
 	}

@@ -148,4 +148,27 @@ class Test_Fingerprint extends TestCase {
 
 		$this->assertNotSame( $fingerprint_100, $fingerprint_200 );
 	}
+
+	/**
+	 * Test debug snapshot emits safe canonical request fields.
+	 */
+	public function test_request_fingerprint_debug_snapshot_is_safe_and_structured(): void {
+		$snapshot = Vinti4_Fingerprint::build_request_fingerprint_debug_snapshot(
+			'SECRET-AUTH-CODE-123',
+			'2026-04-17 08:15:11',
+			'422',
+			'WC817-20260417081511',
+			'ShtUNgPR7H6z6',
+			'90000414',
+			'132',
+			'1'
+		);
+
+		$this->assertSame( '422000', $snapshot['fields']['amount']['normalized_x1000'] );
+		$this->assertSame( 'WC817-20260417081511', $snapshot['fields']['merchantRef'] );
+		$this->assertSame( 8, $snapshot['segment_count'] );
+		$this->assertFalse( $snapshot['sensitive']['posAuthCode']['raw_exposed'] );
+		$this->assertStringEndsWith( '...', $snapshot['sensitive']['posAuthCode']['sha512_b64_preview'] );
+		$this->assertSame( '[SHA512_B64(posAuthCode)]', $snapshot['ordered_segments'][0] );
+	}
 }
