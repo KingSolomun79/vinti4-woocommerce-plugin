@@ -27,6 +27,17 @@ define( 'VINTI4_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Load admin notices unconditionally — must work even without WooCommerce.
 require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-notices.php';
+require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-feature-compatibility.php';
+
+/**
+ * Declare WooCommerce compatibility features for Vinti4.
+ *
+ * @return void
+ */
+function vinti4_declare_woocommerce_compatibility() {
+	Vinti4_Feature_Compatibility::declare_compatibility();
+}
+add_action( 'before_woocommerce_init', 'vinti4_declare_woocommerce_compatibility' );
 
 /**
  * Bootstrap the plugin after all other plugins are loaded.

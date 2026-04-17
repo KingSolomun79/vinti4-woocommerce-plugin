@@ -167,6 +167,7 @@ class Vinti4_Admin_Test_Panel {
 		$results[] = self::test_callback_endpoint();
 		$results[] = self::test_gateway_registered();
 		$results[] = self::test_blocks_support();
+		$results[] = self::test_feature_compatibility_declarations();
 		$results[] = self::test_callback_duplicate_detection();
 		$results[] = self::test_callback_invalid_fingerprint();
 
@@ -449,6 +450,55 @@ class Vinti4_Admin_Test_Panel {
 				: ( $has_class
 					? 'WC_Vinti4_Blocks_Support exists but does not extend AbstractPaymentMethodType.'
 					: 'WC_Vinti4_Blocks_Support class not found.' ),
+		);
+	}
+
+	/**
+	 * Test: WooCommerce feature compatibility declarations are available.
+	 *
+	 * @return array Test result.
+	 */
+	private static function test_feature_compatibility_declarations(): array {
+		if ( ! class_exists( 'Vinti4_Feature_Compatibility' ) || ! method_exists( 'Vinti4_Feature_Compatibility', 'declare_compatibility' ) ) {
+			return array(
+				'name'   => 'Feature Compatibility Declarations',
+				'status' => 'fail',
+				'detail' => 'Vinti4 feature compatibility helper is unavailable.',
+			);
+		}
+
+		$declarations = Vinti4_Feature_Compatibility::declare_compatibility();
+		$expected     = array( 'custom_order_tables', 'cart_checkout_blocks' );
+		$issues       = array();
+
+		foreach ( $expected as $feature_slug ) {
+			$feature_result = null;
+
+			foreach ( $declarations as $declaration ) {
+				if ( ( $declaration['feature'] ?? '' ) === $feature_slug ) {
+					$feature_result = $declaration;
+					break;
+				}
+			}
+
+			if ( null === $feature_result ) {
+				$issues[] = $feature_slug . ': declaration missing';
+				continue;
+			}
+
+			if ( 'declared' !== ( $feature_result['status'] ?? '' ) ) {
+				$issues[] = $feature_slug . ': ' . ( $feature_result['detail'] ?? 'declaration failed' );
+			}
+		}
+
+		$ok = empty( $issues );
+
+		return array(
+			'name'   => 'Feature Compatibility Declarations',
+			'status' => $ok ? 'pass' : 'fail',
+			'detail' => $ok
+				? 'Declared WooCommerce compatibility for custom_order_tables and cart_checkout_blocks.'
+				: implode( '; ', $issues ),
 		);
 	}
 
