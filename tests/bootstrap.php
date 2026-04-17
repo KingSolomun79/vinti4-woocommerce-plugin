@@ -179,9 +179,98 @@ if ( ! function_exists( 'home_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'plugin_dir_path' ) ) {
+	function plugin_dir_path( $file ) {
+		return dirname( (string) $file ) . '/';
+	}
+}
+
+if ( ! function_exists( 'plugin_dir_url' ) ) {
+	function plugin_dir_url( $file ) {
+		return 'http://example.com/wp-content/plugins/vinti4/';
+	}
+}
+
+if ( ! function_exists( 'plugin_basename' ) ) {
+	function plugin_basename( $file ) {
+		return basename( dirname( (string) $file ) ) . '/' . basename( (string) $file );
+	}
+}
+
 if ( ! function_exists( 'add_action' ) ) {
 	function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
-		// No-op stub.
+		if ( ! isset( $GLOBALS['mock_wp_actions'][ $hook ] ) ) {
+			$GLOBALS['mock_wp_actions'][ $hook ] = array();
+		}
+
+		$GLOBALS['mock_wp_actions'][ $hook ][] = array(
+			'callback'      => $callback,
+			'priority'      => $priority,
+			'accepted_args' => $accepted_args,
+		);
+	}
+}
+
+if ( ! function_exists( 'do_action' ) ) {
+	function do_action( $hook, ...$args ) {
+		if ( empty( $GLOBALS['mock_wp_actions'][ $hook ] ) || ! is_array( $GLOBALS['mock_wp_actions'][ $hook ] ) ) {
+			return;
+		}
+
+		foreach ( $GLOBALS['mock_wp_actions'][ $hook ] as $entry ) {
+			if ( ! isset( $entry['callback'] ) || ! is_callable( $entry['callback'] ) ) {
+				continue;
+			}
+
+			call_user_func_array( $entry['callback'], array_slice( $args, 0, (int) ( $entry['accepted_args'] ?? 1 ) ) );
+		}
+	}
+}
+
+if ( ! function_exists( 'add_filter' ) ) {
+	function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
+		if ( ! isset( $GLOBALS['mock_wp_filters'][ $hook ] ) ) {
+			$GLOBALS['mock_wp_filters'][ $hook ] = array();
+		}
+
+		$GLOBALS['mock_wp_filters'][ $hook ][] = array(
+			'callback'      => $callback,
+			'priority'      => $priority,
+			'accepted_args' => $accepted_args,
+		);
+	}
+}
+
+if ( ! function_exists( 'register_activation_hook' ) ) {
+	function register_activation_hook( $file, $callback ) {
+		$GLOBALS['mock_wp_activation_hooks'][] = array(
+			'file'     => $file,
+			'callback' => $callback,
+		);
+	}
+}
+
+if ( ! function_exists( 'register_deactivation_hook' ) ) {
+	function register_deactivation_hook( $file, $callback ) {
+		$GLOBALS['mock_wp_deactivation_hooks'][] = array(
+			'file'     => $file,
+			'callback' => $callback,
+		);
+	}
+}
+
+if ( ! function_exists( 'flush_rewrite_rules' ) ) {
+	function flush_rewrite_rules() {
+		$GLOBALS['mock_flush_rewrite_rules_called'] = true;
+	}
+}
+
+if ( ! function_exists( 'add_rewrite_rule' ) ) {
+	function add_rewrite_rule( $regex, $query, $after = 'bottom' ) {
+		$GLOBALS['mock_rewrite_rules'][ $regex ] = array(
+			'query' => $query,
+			'after' => $after,
+		);
 	}
 }
 
@@ -259,11 +348,33 @@ if ( ! class_exists( 'WC_Order' ) ) {
 	}
 }
 
+if ( ! class_exists( 'Mock_Vinti4_FeaturesUtil' ) ) {
+	class Mock_Vinti4_FeaturesUtil {
+		public static array $calls = array();
+		public static bool $return_value = true;
+
+		public static function declare_compatibility( $feature, $plugin_file, $compatible ) {
+			self::$calls[] = array(
+				'feature'     => $feature,
+				'plugin_file' => $plugin_file,
+				'compatible'  => $compatible,
+			);
+
+			return self::$return_value;
+		}
+	}
+}
+
+if ( ! class_exists( 'Automattic\\WooCommerce\\Utilities\\FeaturesUtil' ) ) {
+	class_alias( 'Mock_Vinti4_FeaturesUtil', 'Automattic\\WooCommerce\\Utilities\\FeaturesUtil' );
+}
+
 // ─── Require source files ───────────────────────────────────────────────────
 
 require_once __DIR__ . '/../includes/functions-vinti4-formatting.php';
 require_once __DIR__ . '/../includes/class-vinti4-fingerprint.php';
 require_once __DIR__ . '/../includes/class-vinti4-logger.php';
+require_once __DIR__ . '/../includes/class-vinti4-feature-compatibility.php';
 require_once __DIR__ . '/../includes/class-wc-gateway-vinti4.php';
 require_once __DIR__ . '/../includes/class-vinti4-request-builder.php';
 require_once __DIR__ . '/../includes/class-vinti4-callback-handler.php';
