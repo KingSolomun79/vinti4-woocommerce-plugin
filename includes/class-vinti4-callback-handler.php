@@ -275,12 +275,25 @@ class Vinti4_Callback_Handler {
 		if ( empty( $attempt_history ) ) {
 			Vinti4_Logger::log(
 				sprintf(
-					'Legacy callback path: using order-level validation for order %d, merchantRef %s.',
+					'Legacy callback path detected: order %d has no attempt history, using order-level validation. merchantRef: %s',
 					$order_id,
 					$merchant_ref
 				),
 				'notice'
 			);
+
+			// Mark order as legacy for diagnostics.
+			$order->update_meta_data( '_vinti4_is_legacy_order', true );
+			$order->save();
+
+			Vinti4_Logger::log(
+				sprintf(
+					'Legacy order marked for diagnostics: order %d',
+					$order_id
+				),
+				'debug'
+			);
+
 			self::handle_legacy_callback(
 				$gateway,
 				$order,
