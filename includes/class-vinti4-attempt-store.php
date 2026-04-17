@@ -82,6 +82,152 @@ class Vinti4_Attempt_Store {
 	}
 
 	/**
+	 * Find an attempt in order history by its merchant reference.
+	 *
+	 * Iterates attempt history to find the attempt whose merchant_ref
+	 * matches the given reference. Returns null if not found.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WC_Order $order       WooCommerce order.
+	 * @param string   $merchant_ref Merchant reference to search for.
+	 * @return array|null Attempt array or null if not found.
+	 */
+	public static function find_attempt_by_merchant_ref( WC_Order $order, string $merchant_ref ): ?array {
+		$attempts = self::get_attempts( $order );
+
+		foreach ( $attempts as $attempt ) {
+			if ( isset( $attempt['merchant_ref'] ) && $attempt['merchant_ref'] === $merchant_ref ) {
+				return $attempt;
+			}
+		}
+
+		Vinti4_Logger::log(
+			sprintf(
+				'Attempt lookup failed: merchantRef %s not in order %d history.',
+				$merchant_ref,
+				$order->get_id()
+			),
+			'warning'
+		);
+
+		return null;
+	}
+
+	/**
+	 * Calculate the total paid amount from completed attempts.
+	 *
+	 * Sums amounts from attempts where status is 'completed' or
+	 * callback_received is true. Caches result in order meta.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WC_Order $order WooCommerce order.
+	 * @return float Total paid amount.
+	 */
+	public static function get_paid_total( WC_Order $order ): float {
+		$attempts = self::get_attempts( $order );
+		$paid     = 0.0;
+
+		foreach ( $attempts as $attempt ) {
+			$is_completed = isset( $attempt['status'] ) && 'completed' === $attempt['status'];
+			$is_callback  = ! empty( $attempt['callback_received'] );
+
+			if ( $is_completed || $is_callback ) {
+				$amount = isset( $attempt['amount'] ) ? (float) $attempt['amount'] : 0.0;
+				$paid  += $amount;
+			}
+		}
+
+		$order->update_meta_data( '_vinti4_paid_total', $paid );
+		$order->save();
+
+		return $paid;
+	}
+
+	/**
+	 * Calculate the outstanding (unpaid) balance for an order.
+	 *
+	 * Returns the difference between the order total and paid total,
+	 * floored at zero to avoid negative balances.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WC_Order $order WooCommerce order.
+	 * @return float Outstanding amount (never negative).
+	 */
+	public static function get_outstanding_total( WC_Order $order ): float {
+		$order_total = (float) $order->get_total();
+		$paid_total  = self::get_paid_total( $order );
+
+		return max( 0.0, $order_total - $paid_total );
+	}
+
+	/**
+	 * Mark an attempt as completed with its transaction ID.
+	 *
+	 * Updates the attempt status in append-only history and refreshes
+	 * the paid total cache. Does not overwrite existing completed state.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WC_Order $order          WooCommerce order.
+	 * @param string   $attempt_id     Attempt identifier.
+	 * @param string   $transaction_id SISP transaction ID.
+	 * @return void
+	 */
+	public static function mark_attempt_completed( WC_Order $order, string $attempt_id, string $transaction_id ): void {
+		$history  = self::get_attempts( $order );
+		$modified = false;
+
+		foreach ( $history as $index => $attempt ) {
+			if ( isset( $attempt['attempt_id'] ) && $attempt['attempt_id'] === $attempt_id ) {
+				$history[ $index ]['status']          = 'completed';
+				$history[ $index ]['transaction_id']  = $transaction_id;
+				$history[ $index ]['callback_received'] = true;
+				$modified = true;
+				break;
+			}
+		}
+
+		if ( $modified ) {
+			$order->update_meta_data( self::HISTORY_META_KEY, $history );
+			self::get_paid_total( $order ); // Refreshes _vinti4_paid_total cache.
+		}
+	}
+
+	/**
+	 * Mark an attempt as failed with an error message.
+	 *
+	 * Updates the attempt status in append-only history.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WC_Order $order         WooCommerce order.
+	 * @param string   $attempt_id    Attempt identifier.
+	 * @param string   $error_message Failure reason.
+	 * @return void
+	 */
+	public static function mark_attempt_failed( WC_Order $order, string $attempt_id, string $error_message ): void {
+		$history  = self::get_attempts( $order );
+		$modified = false;
+
+		foreach ( $history as $index => $attempt ) {
+			if ( isset( $attempt['attempt_id'] ) && $attempt['attempt_id'] === $attempt_id ) {
+				$history[ $index ]['status'] = 'failed';
+				$history[ $index ]['error']  = $error_message;
+				$modified = true;
+				break;
+			}
+		}
+
+		if ( $modified ) {
+			$order->update_meta_data( self::HISTORY_META_KEY, $history );
+			$order->save();
+		}
+	}
+
+	/**
 	 * Mirror the newest attempt into legacy single-attempt meta keys.
 	 *
 	 * This compatibility projection preserves existing redirect/callback paths
