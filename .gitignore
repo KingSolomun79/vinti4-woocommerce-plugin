@@ -5,3 +5,6 @@
 /composer.phar
 /composer-setup.php
 *.bak
+/.tmp-*.html
+/.wc-session.cookies
+/nul
