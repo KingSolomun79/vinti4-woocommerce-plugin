@@ -19,24 +19,24 @@ Requirements for this milestone only (partial deposits and multi-attempt payment
 - [ ] **PART-01**: Admin can request a partial payment using percentage and fixed amount modes
 - [ ] **PART-02**: Partial amount validation blocks invalid values (<= 0, > outstanding, malformed input)
 - [ ] **PART-03**: Outstanding balance is computed from successful paid attempts, not from last attempt only
-- [ ] **PART-04**: A successful attempt updates paid/outstanding totals correctly at order level
+- [x] **PART-04**: A successful attempt updates paid/outstanding totals correctly at order level
 
 ### Request Delivery and Callback Resolution
 
 - [ ] **REQ-01**: Admin can send a payment request link/form for a specific attempt
-- [ ] **REQ-02**: Callback lookup resolves the exact attempt by attempt reference context before order mutation
-- [ ] **REQ-03**: Idempotency guard is enforced per attempt (duplicate callback does not re-apply payment)
-- [ ] **REQ-04**: Invalid reference/session/fingerprint for an attempt fails safely with diagnostic reason
+- [x] **REQ-02**: Callback lookup resolves the exact attempt by attempt reference context before order mutation
+- [x] **REQ-03**: Idempotency guard is enforced per attempt (duplicate callback does not re-apply payment)
+- [x] **REQ-04**: Invalid reference/session/fingerprint for an attempt fails safely with diagnostic reason
 
 ### Card Flow Compatibility
 
-- [ ] **CARD-01**: Existing hosted 3DS redirect flow for SISP card payments remains functional after multi-attempt changes
-- [ ] **CARD-02**: Sandbox 3DS test card can complete a partial-attempt payment path in test mode
+- [x] **CARD-01**: Existing hosted 3DS redirect flow for SISP card payments remains functional after multi-attempt changes
+- [x] **CARD-02**: Sandbox 3DS test card can complete a partial-attempt payment path in test mode
 
 ### Observability
 
-- [ ] **OBS-01**: Logs include attempt ID, amount, merchantRef, and callback outcome per attempt
-- [ ] **OBS-02**: Logs clearly distinguish invalid reference vs invalid fingerprint vs duplicate callback in multi-attempt flows
+- [x] **OBS-01**: Logs include attempt ID, amount, merchantRef, and callback outcome per attempt
+- [x] **OBS-02**: Logs clearly distinguish invalid reference vs invalid fingerprint vs duplicate callback in multi-attempt flows
 
 ## Future Requirements
 
@@ -82,15 +82,15 @@ Which phase covers which requirement. Updated during roadmap creation.
 | PART-01 | Phase 10 | Pending |
 | PART-02 | Phase 10 | Pending |
 | PART-03 | Phase 10 | Pending |
-| PART-04 | Phase 11 | Pending |
+| PART-04 | Phase 11 | Complete |
 | REQ-01 | Phase 10 | Pending |
-| REQ-02 | Phase 11 | Pending |
-| REQ-03 | Phase 11 | Pending |
-| REQ-04 | Phase 11 | Pending |
-| CARD-01 | Phase 11 | Pending |
-| CARD-02 | Phase 11 | Pending |
-| OBS-01 | Phase 11 | Pending |
-| OBS-02 | Phase 11 | Pending |
+| REQ-02 | Phase 11 | Complete |
+| REQ-03 | Phase 11 | Complete |
+| REQ-04 | Phase 11 | Complete |
+| CARD-01 | Phase 11 | Complete |
+| CARD-02 | Phase 11 | Complete |
+| OBS-01 | Phase 11 | Complete |
+| OBS-02 | Phase 11 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 16 total
