@@ -111,4 +111,23 @@ class Test_Request_Builder extends TestCase {
 
 		$this->assertSame( 'http://example.com/wc-api/vinti4/', $attempt['urlMerchantResponse'] );
 	}
+
+	public function test_build_payment_attempt_uses_explicit_context_amount_for_fingerprint(): void {
+		$gateway = $this->create_gateway( 'pt' );
+		$order   = $this->create_order();
+
+		$common_context = array(
+			'attempt_id'       => 'attempt-context-1',
+			'timestamp'        => '2026-04-17 14:00:00',
+			'merchant_ref'     => 'WC42-20260417140000abcd1234',
+			'merchant_session' => 'S14000000abcd1234',
+		);
+
+		$attempt_low_amount  = Vinti4_Request_Builder::build_payment_attempt( $order, $gateway, $common_context + array( 'amount' => 50.0 ) );
+		$attempt_high_amount = Vinti4_Request_Builder::build_payment_attempt( $order, $gateway, $common_context + array( 'amount' => 75.0 ) );
+
+		$this->assertSame( '50', $attempt_low_amount['amount'] );
+		$this->assertSame( '75', $attempt_high_amount['amount'] );
+		$this->assertNotSame( $attempt_low_amount['fingerprint'], $attempt_high_amount['fingerprint'] );
+	}
 }

@@ -27,6 +27,14 @@ if ( ! function_exists( 'wp_generate_password' ) ) {
 	 * Deterministic password for testing.
 	 */
 	function wp_generate_password( $length = 12, $special_chars = true, $extra_special_chars = false ) {
+		if ( ! empty( $GLOBALS['mock_wp_generate_password_queue'] ) && is_array( $GLOBALS['mock_wp_generate_password_queue'] ) ) {
+			$next = array_shift( $GLOBALS['mock_wp_generate_password_queue'] );
+
+			if ( is_string( $next ) && '' !== $next ) {
+				return substr( $next, 0, $length );
+			}
+		}
+
 		return str_repeat( 'a', $length );
 	}
 }
@@ -389,6 +397,7 @@ require_once __DIR__ . '/../includes/class-vinti4-logger.php';
 require_once __DIR__ . '/../includes/class-vinti4-feature-compatibility.php';
 require_once __DIR__ . '/../includes/class-wc-gateway-vinti4.php';
 require_once __DIR__ . '/../includes/class-vinti4-request-builder.php';
+require_once __DIR__ . '/../includes/class-vinti4-attempt-factory.php';
 require_once __DIR__ . '/../includes/class-vinti4-attempt-store.php';
 require_once __DIR__ . '/../includes/class-vinti4-callback-handler.php';
 require_once __DIR__ . '/../includes/class-vinti4-redirect-form.php';
