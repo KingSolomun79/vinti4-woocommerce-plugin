@@ -22,6 +22,55 @@ if ( class_exists( 'Vinti4_Redirect_Form' ) ) {
 class Vinti4_Redirect_Form {
 
 	/**
+	 * Normalize callback URL values to an absolute merchant URL.
+	 *
+	 * @param string $url Callback URL candidate from order meta.
+	 * @return string
+	 */
+	private static function normalize_merchant_response_url( string $url ): string {
+		$trimmed_url = trim( $url );
+
+		if ( '' === $trimmed_url ) {
+			return '';
+		}
+
+		$parts = parse_url( $trimmed_url );
+
+		if ( false === $parts ) {
+			return '';
+		}
+
+		if ( ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
+			return $trimmed_url;
+		}
+
+		if ( 0 === strpos( $trimmed_url, '//' ) ) {
+			$home_scheme = parse_url( home_url( '/' ), PHP_URL_SCHEME );
+
+			if ( ! is_string( $home_scheme ) || '' === $home_scheme ) {
+				$home_scheme = 'https';
+			}
+
+			return $home_scheme . ':' . $trimmed_url;
+		}
+
+		if ( 0 !== strpos( $trimmed_url, '/' ) ) {
+			$trimmed_url = '/' . $trimmed_url;
+		}
+
+		return home_url( $trimmed_url );
+	}
+
+	/**
+	 * Determine whether redirect rendering is running under PHPUnit.
+	 *
+	 * @return bool
+	 */
+	private static function is_test_environment(): bool {
+		return defined( 'VINTI4_PHPUNIT' ) && VINTI4_PHPUNIT;
+	}
+
+	/**
 	 * Render the payment redirect page.
 	 *
 	 * Validates the order/key query parameters, loads attempt meta stored
@@ -66,6 +115,9 @@ class Vinti4_Redirect_Form {
 		$amount              = $order->get_meta( '_vinti4_amount' );
 		$currency            = $order->get_meta( '_vinti4_currency' );
 		$timestamp           = $order->get_meta( '_vinti4_timestamp' );
+		$language_messages   = $order->get_meta( '_vinti4_language_messages' );
+		$url_merchant_response = $order->get_meta( '_vinti4_url_merchant_response' );
+		$is_3dsec            = $order->get_meta( '_vinti4_is_3dsec' );
 		$fingerprint         = $order->get_meta( '_vinti4_fingerprint' );
 		$fingerprint_version = $order->get_meta( '_vinti4_fingerprint_version' );
 		$purchase_request_b64 = $order->get_meta( '_vinti4_purchase_request_b64' );
@@ -92,6 +144,38 @@ class Vinti4_Redirect_Form {
 
 		if ( '' === (string) $fingerprint_version ) {
 			$fingerprint_version = '1';
+		}
+
+		if ( '' === (string) $language_messages ) {
+			$language_messages = ( 'en' === strtolower( trim( (string) $gateway->language ) ) ) ? 'en' : 'pt';
+		}
+
+		if ( '' === (string) $is_3dsec ) {
+			$is_3dsec = '1';
+		}
+
+		if ( '' === (string) $url_merchant_response ) {
+			if ( function_exists( 'WC' ) && null !== WC() && method_exists( WC(), 'api_request_url' ) ) {
+				$generated = WC()->api_request_url( 'vinti4' );
+
+				if ( is_string( $generated ) ) {
+					$url_merchant_response = $generated;
+				}
+			}
+
+			if ( '' === (string) $url_merchant_response ) {
+				$url_merchant_response = home_url( '/wc-api/vinti4/' );
+			}
+		}
+
+		$url_merchant_response = self::normalize_merchant_response_url( (string) $url_merchant_response );
+
+		if ( '' === (string) $url_merchant_response ) {
+			wp_die(
+				esc_html__( 'Invalid callback URL for payment response.', 'vinti4' ),
+				esc_html__( 'Payment Error', 'vinti4' ),
+				array( 'response' => 500 )
+			);
 		}
 
 		// 6. Build the SISP URL with explicit RFC3986 query encoding.
@@ -149,6 +233,9 @@ class Vinti4_Redirect_Form {
 		echo '<input type="hidden" name="fingerprint" value="' . esc_attr( $fingerprint ) . '">';
 		echo '<input type="hidden" name="timestamp" value="' . esc_attr( $timestamp ) . '">';
 		echo '<input type="hidden" name="purchaseRequest" value="' . esc_attr( $purchase_request_b64 ) . '">';
+		echo '<input type="hidden" name="languageMessages" value="' . esc_attr( $language_messages ) . '">';
+		echo '<input type="hidden" name="urlMerchantResponse" value="' . esc_attr( $url_merchant_response ) . '">';
+		echo '<input type="hidden" name="is3DSec" value="' . esc_attr( $is_3dsec ) . '">';
 
 		// Language.
 		echo '<input type="hidden" name="lang" value="' . esc_attr( $gateway->language ) . '">';
@@ -164,6 +251,11 @@ class Vinti4_Redirect_Form {
 		// Auto-submit JavaScript.
 		echo '<script>document.getElementById("vinti4-payment-form").submit();</script>';
 		echo '</body></html>';
+
+		if ( self::is_test_environment() ) {
+			return;
+		}
+
 		exit;
 	}
 }
