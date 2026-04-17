@@ -44,11 +44,13 @@ class Test_Callback_Handler extends TestCase {
 
 		// Reset $_POST for each test.
 		$_POST = array();
+		$_GET  = array();
 	}
 
 	protected function tearDown(): void {
 		parent::tearDown();
 		$_POST = array();
+		$_GET  = array();
 		unset( $GLOBALS['mock_wc_order'] );
 	}
 
@@ -301,5 +303,34 @@ class Test_Callback_Handler extends TestCase {
 		$this->assertTrue( $this->order->update_status_called, 'Order should be marked as failed.' );
 		$this->assertSame( 'failed', $this->order->updated_status );
 		$this->assertFalse( $this->order->payment_complete_called, 'payment_complete should NOT be called on failure callback.' );
+	}
+
+	/**
+	 * Test 6: Failure callback data delivered in query string should be accepted.
+	 * Expected: order marked as failed and redirected, not wp_die().
+	 */
+	public function test_failure_callback_query_payload_marks_order_failed(): void {
+		$this->order = $this->create_mock_order();
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = array();
+		$_GET  = array(
+			'messageType'                         => '6',
+			'merchantRespMerchantRef'             => 'WC42-20260416143022',
+			'merchantRespMerchantSession'         => 'Squerypayload001',
+			'merchantRespErrorDetail'             => 'Invalid Data',
+			'merchantRespErrorDescription'        => 'Fingerprint Invalid',
+			'merchantRespAdditionalErrorMessage'  => 'Fingerprint Invalid',
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+			$this->fail( 'Expected Vinti4_Redirect_Exception was not thrown' );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected — callback redirects after marking as failed.
+		}
+
+		$this->assertTrue( $this->order->update_status_called, 'Order should be marked as failed.' );
+		$this->assertSame( 'failed', $this->order->updated_status );
 	}
 }

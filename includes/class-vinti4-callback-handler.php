@@ -53,30 +53,30 @@ class Vinti4_Callback_Handler {
 	 */
 	public static function handle( WC_Gateway_Vinti4 $gateway ): void {
 
-		// Step 1 — Extract and validate POST data.
+		// Step 1 — Extract callback data (prefer POST, fallback to query args).
 		// phpcs:ignore WordPress.Security.NonceVerification -- SISP is an external server, no nonce.
-		$post = $_POST;
+		$request = array_merge( $_GET, $_POST );
 
 		Vinti4_Logger::log( 'Callback received from SISP.' );
 
-		$message_type              = isset( $post['messageType'] ) ? sanitize_text_field( wp_unslash( $post['messageType'] ) ) : '';
-		$result_fingerprint        = isset( $post['resultFingerPrint'] ) ? sanitize_text_field( wp_unslash( $post['resultFingerPrint'] ) ) : '';
-		$merchant_ref              = isset( $post['merchantRespMerchantRef'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespMerchantRef'] ) ) : '';
-		$merchant_session          = isset( $post['merchantRespMerchantSession'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespMerchantSession'] ) ) : '';
-		$purchase_amount           = isset( $post['merchantRespPurchaseAmount'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespPurchaseAmount'] ) ) : '';
-		$clearing_period           = isset( $post['merchantRespCP'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespCP'] ) ) : '';
-		$transaction_id            = isset( $post['merchantRespTid'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespTid'] ) ) : '';
-		$message_id                = isset( $post['merchantRespMessageID'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespMessageID'] ) ) : '';
-		$pan                       = isset( $post['merchantRespPan'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespPan'] ) ) : '';
-		$merchant_response         = isset( $post['merchantResp'] ) ? sanitize_text_field( wp_unslash( $post['merchantResp'] ) ) : '';
-		$timestamp                 = isset( $post['merchantRespTimeStamp'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespTimeStamp'] ) ) : '';
-		$reference_number          = isset( $post['merchantRespReferenceNumber'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespReferenceNumber'] ) ) : '';
-		$entity_code               = isset( $post['merchantRespEntityCode'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespEntityCode'] ) ) : '';
-		$client_receipt            = isset( $post['merchantRespClientReceipt'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespClientReceipt'] ) ) : '';
-		$additional_error_message  = isset( $post['merchantRespAdditionalErrorMessage'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespAdditionalErrorMessage'] ) ) : '';
-		$reload_code               = isset( $post['merchantRespReloadCode'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespReloadCode'] ) ) : '';
-		$error_detail              = isset( $post['merchantRespErrorDetail'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespErrorDetail'] ) ) : '';
-		$error_description         = isset( $post['merchantRespErrorDescription'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespErrorDescription'] ) ) : '';
+		$message_type              = isset( $request['messageType'] ) ? sanitize_text_field( wp_unslash( $request['messageType'] ) ) : '';
+		$result_fingerprint        = isset( $request['resultFingerPrint'] ) ? sanitize_text_field( wp_unslash( $request['resultFingerPrint'] ) ) : '';
+		$merchant_ref              = isset( $request['merchantRespMerchantRef'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespMerchantRef'] ) ) : '';
+		$merchant_session          = isset( $request['merchantRespMerchantSession'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespMerchantSession'] ) ) : '';
+		$purchase_amount           = isset( $request['merchantRespPurchaseAmount'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespPurchaseAmount'] ) ) : '';
+		$clearing_period           = isset( $request['merchantRespCP'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespCP'] ) ) : '';
+		$transaction_id            = isset( $request['merchantRespTid'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespTid'] ) ) : '';
+		$message_id                = isset( $request['merchantRespMessageID'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespMessageID'] ) ) : '';
+		$pan                       = isset( $request['merchantRespPan'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespPan'] ) ) : '';
+		$merchant_response         = isset( $request['merchantResp'] ) ? sanitize_text_field( wp_unslash( $request['merchantResp'] ) ) : '';
+		$timestamp                 = isset( $request['merchantRespTimeStamp'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespTimeStamp'] ) ) : '';
+		$reference_number          = isset( $request['merchantRespReferenceNumber'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespReferenceNumber'] ) ) : '';
+		$entity_code               = isset( $request['merchantRespEntityCode'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespEntityCode'] ) ) : '';
+		$client_receipt            = isset( $request['merchantRespClientReceipt'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespClientReceipt'] ) ) : '';
+		$additional_error_message  = isset( $request['merchantRespAdditionalErrorMessage'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespAdditionalErrorMessage'] ) ) : '';
+		$reload_code               = isset( $request['merchantRespReloadCode'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespReloadCode'] ) ) : '';
+		$error_detail              = isset( $request['merchantRespErrorDetail'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespErrorDetail'] ) ) : '';
+		$error_description         = isset( $request['merchantRespErrorDescription'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespErrorDescription'] ) ) : '';
 
 		// Require merchantRef for all callbacks.
 		if ( empty( $merchant_ref ) ) {
