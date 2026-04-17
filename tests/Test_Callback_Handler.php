@@ -977,10 +977,10 @@ class Test_Callback_Handler extends TestCase {
 			'att-sandbox-partial',
 			'WC42-20260417100000pt',
 			'Ssandboxpt001',
-			'100000'
+			'100'
 		);
 
-		// Order total is 200.0 (i.e. 200000 in cents), partial attempt for 100000 (100.0).
+		// Order total is 200.0, partial attempt for 100.0 (50%).
 		$this->order = $this->create_order_with_attempts(
 			array( $attempt ),
 			array(),
@@ -991,7 +991,7 @@ class Test_Callback_Handler extends TestCase {
 		$_POST = $this->attempt_post_payload(
 			'WC42-20260417100000pt',
 			'Ssandboxpt001',
-			'100000'
+			'100'
 		);
 
 		try {
@@ -1007,11 +1007,13 @@ class Test_Callback_Handler extends TestCase {
 		$this->assertTrue( $this->order->update_status_called, 'update_status should be called for partial payment.' );
 		$this->assertSame( 'processing', $this->order->updated_status );
 
-		// Verify paid and outstanding totals are tracked in meta.
+		// Verify paid total is tracked in meta.
 		$paid_total = $this->order->get_meta( '_vinti4_paid_total' );
-		$outstanding_total = $this->order->get_meta( '_vinti4_outstanding_total' );
 		$this->assertNotEmpty( $paid_total, 'Paid total should be set after partial payment.' );
-		$this->assertNotEmpty( $outstanding_total, 'Outstanding total should be set after partial payment.' );
+
+		// Verify outstanding total is computed correctly (not cached to meta, computed on demand).
+		$outstanding = Vinti4_Attempt_Store::get_outstanding_total( $this->order );
+		$this->assertEqualsWithDelta( 100.0, $outstanding, 0.01, 'Outstanding total should equal remaining balance after partial payment.' );
 	}
 
 	/**
