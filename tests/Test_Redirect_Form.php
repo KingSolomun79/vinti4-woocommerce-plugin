@@ -35,6 +35,10 @@ class Test_Redirect_Form extends TestCase {
 				$this->meta_keys_read[] = $key;
 				return $this->meta[ $key ] ?? '';
 			}
+
+			public function set_meta( $key, $value ): void {
+				$this->meta[ $key ] = $value;
+			}
 		};
 
 		$GLOBALS['mock_wc_order'] = $this->order;
@@ -149,5 +153,14 @@ class Test_Redirect_Form extends TestCase {
 			),
 			$this->order->meta_keys_read
 		);
+	}
+
+	public function test_render_normalizes_legacy_relative_callback_url_from_order_meta(): void {
+		$this->order->set_meta( '_vinti4_url_merchant_response', '/wc-api/vinti4/' );
+
+		$html   = $this->render_form_html();
+		$inputs = $this->extract_hidden_input_values( $html );
+
+		$this->assertSame( 'http://example.com/wc-api/vinti4/', $inputs['urlMerchantResponse'] ?? null );
 	}
 }

@@ -22,6 +22,49 @@ if ( class_exists( 'Vinti4_Redirect_Form' ) ) {
 class Vinti4_Redirect_Form {
 
 	/**
+	 * Normalize callback URL values to an absolute merchant URL.
+	 *
+	 * This keeps older orders (saved before callback normalization) working by
+	 * converting legacy relative callback paths into absolute URLs at render time.
+	 *
+	 * @param string $url Callback URL candidate from order meta.
+	 * @return string
+	 */
+	private static function normalize_merchant_response_url( string $url ): string {
+		$trimmed_url = trim( $url );
+
+		if ( '' === $trimmed_url ) {
+			return '';
+		}
+
+		$parts = parse_url( $trimmed_url );
+
+		if ( false === $parts ) {
+			return '';
+		}
+
+		if ( ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
+			return $trimmed_url;
+		}
+
+		if ( 0 === strpos( $trimmed_url, '//' ) ) {
+			$home_scheme = parse_url( home_url( '/' ), PHP_URL_SCHEME );
+
+			if ( ! is_string( $home_scheme ) || '' === $home_scheme ) {
+				$home_scheme = 'https';
+			}
+
+			return $home_scheme . ':' . $trimmed_url;
+		}
+
+		if ( 0 !== strpos( $trimmed_url, '/' ) ) {
+			$trimmed_url = '/' . $trimmed_url;
+		}
+
+		return home_url( $trimmed_url );
+	}
+
+	/**
 	 * Determine whether redirect rendering is running under PHPUnit.
 	 *
 	 * @return bool
@@ -110,6 +153,16 @@ class Vinti4_Redirect_Form {
 		if ( null === $gateway ) {
 			wp_die(
 				esc_html__( 'Payment gateway not available.', 'vinti4' ),
+				esc_html__( 'Payment Error', 'vinti4' ),
+				array( 'response' => 500 )
+			);
+		}
+
+		$url_merchant_response = self::normalize_merchant_response_url( (string) $url_merchant_response );
+
+		if ( '' === $url_merchant_response ) {
+			wp_die(
+				esc_html__( 'Invalid callback URL for payment response.', 'vinti4' ),
 				esc_html__( 'Payment Error', 'vinti4' ),
 				array( 'response' => 500 )
 			);
