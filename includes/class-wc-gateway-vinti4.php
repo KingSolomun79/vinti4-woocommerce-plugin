@@ -15,6 +15,14 @@ defined( 'ABSPATH' ) || exit;
  * WooCommerce payment gateway for Vinti4 / SISP hosted payment page.
  */
 class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
+	/**
+	 * Default currency setting value.
+	 *
+	 * Declared explicitly for PHP 8.2+ dynamic property compatibility.
+	 *
+	 * @var string
+	 */
+	public string $currency_default = '';
 
 	/**
 	 * Constructor.
@@ -305,6 +313,28 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 	 */
 	public function get_fingerprint_version(): string {
 		return '1';
+	}
+
+	/**
+	 * Resolve the amount multiplier used in request fingerprint normalization.
+	 *
+	 * Supported values are 1, 100, and 1000. Default is 1000.
+	 * A temporary override can be set via VINTI4_FINGERPRINT_AMOUNT_SCALE.
+	 *
+	 * @return int
+	 */
+	public function get_fingerprint_amount_scale(): int {
+		$scale = 1000;
+
+		if ( defined( 'VINTI4_FINGERPRINT_AMOUNT_SCALE' ) ) {
+			$scale = (int) VINTI4_FINGERPRINT_AMOUNT_SCALE;
+		}
+
+		if ( ! in_array( $scale, array( 1, 100, 1000 ), true ) ) {
+			return 1000;
+		}
+
+		return $scale;
 	}
 
 	/**

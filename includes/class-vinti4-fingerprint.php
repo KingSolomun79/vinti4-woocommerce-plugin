@@ -67,12 +67,14 @@ class Vinti4_Fingerprint {
 		string $pos_id,
 		string $currency,
 		string $transaction_code,
+		int $amount_multiplier = 1000,
 		string $entity_code = '',
 		string $reference_number = '',
 		string $token = ''
 	): array {
 		$auth_hash_b64      = self::sha512_base64( $pos_auth_code );
-		$amount_x1000       = (string) ( absint( $amount ) * 1000 );
+		$amount_multiplier  = in_array( $amount_multiplier, array( 1, 100, 1000 ), true ) ? $amount_multiplier : 1000;
+		$normalized_amount  = (string) ( absint( $amount ) * $amount_multiplier );
 		$entity_normalized  = '';
 		$reference_normalized = '';
 		$token_normalized   = '';
@@ -92,7 +94,7 @@ class Vinti4_Fingerprint {
 		$segments = array(
 			'[SHA512_B64(posAuthCode)]',
 			trim( $timestamp ),
-			$amount_x1000,
+			$normalized_amount,
 			trim( $merchant_ref ),
 			trim( $merchant_session ),
 			trim( $pos_id ),
@@ -125,7 +127,8 @@ class Vinti4_Fingerprint {
 				'timestamp' => trim( $timestamp ),
 				'amount' => array(
 					'raw' => trim( $amount ),
-					'normalized_x1000' => $amount_x1000,
+					'multiplier' => (string) $amount_multiplier,
+					'normalized' => $normalized_amount,
 				),
 				'merchantRef' => trim( $merchant_ref ),
 				'merchantSession' => trim( $merchant_session ),
@@ -194,13 +197,16 @@ class Vinti4_Fingerprint {
 		string $pos_id,
 		string $currency,
 		string $transaction_code,
+		int $amount_multiplier = 1000,
 		string $entity_code = '',
 		string $reference_number = '',
 		string $token = ''
 	): string {
+		$amount_multiplier = in_array( $amount_multiplier, array( 1, 100, 1000 ), true ) ? $amount_multiplier : 1000;
+
 		$base = self::sha512_base64( $pos_auth_code )
 			. trim( $timestamp )
-			. (string) ( absint( $amount ) * 1000 )
+			. (string) ( absint( $amount ) * $amount_multiplier )
 			. trim( $merchant_ref )
 			. trim( $merchant_session )
 			. trim( $pos_id )

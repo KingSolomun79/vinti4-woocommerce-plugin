@@ -57,6 +57,7 @@ class Test_Fingerprint extends TestCase {
 			$v['pos_id'],
 			$v['currency'],
 			$v['transaction_code'],
+			1000,
 			$v['entity_code'],
 			$v['reference_number'],
 			$v['token']
@@ -82,6 +83,7 @@ class Test_Fingerprint extends TestCase {
 			$v['pos_id'],
 			$v['currency'],
 			$v['transaction_code'],
+			1000,
 			$v['entity_code']
 		);
 
@@ -164,11 +166,43 @@ class Test_Fingerprint extends TestCase {
 			'1'
 		);
 
-		$this->assertSame( '422000', $snapshot['fields']['amount']['normalized_x1000'] );
+		$this->assertSame( '1000', $snapshot['fields']['amount']['multiplier'] );
+		$this->assertSame( '422000', $snapshot['fields']['amount']['normalized'] );
 		$this->assertSame( 'WC817-20260417081511', $snapshot['fields']['merchantRef'] );
 		$this->assertSame( 8, $snapshot['segment_count'] );
 		$this->assertFalse( $snapshot['sensitive']['posAuthCode']['raw_exposed'] );
 		$this->assertStringEndsWith( '...', $snapshot['sensitive']['posAuthCode']['sha512_b64_preview'] );
 		$this->assertSame( '[SHA512_B64(posAuthCode)]', $snapshot['ordered_segments'][0] );
+	}
+
+	/**
+	 * Test request fingerprint supports explicit amount scale overrides.
+	 */
+	public function test_request_fingerprint_changes_with_amount_scale_override(): void {
+		$fingerprint_scale_1000 = Vinti4_Fingerprint::build_request_fingerprint(
+			'TESTAUTH123',
+			'2026-04-17 08:15:11',
+			'422',
+			'WC817-20260417081511',
+			'ShtUNgPR7H6z6',
+			'90000414',
+			'132',
+			'1',
+			1000
+		);
+
+		$fingerprint_scale_1 = Vinti4_Fingerprint::build_request_fingerprint(
+			'TESTAUTH123',
+			'2026-04-17 08:15:11',
+			'422',
+			'WC817-20260417081511',
+			'ShtUNgPR7H6z6',
+			'90000414',
+			'132',
+			'1',
+			1
+		);
+
+		$this->assertNotSame( $fingerprint_scale_1000, $fingerprint_scale_1 );
 	}
 }
