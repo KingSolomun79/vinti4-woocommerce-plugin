@@ -9,14 +9,14 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 
 ## Current Position
 
-Phase: 9 of 14 (SISP Request Language and Required Fields)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-04-16 - Completed 09-02-PLAN.md
+Phase: 10 of 14 (WooCommerce Feature Compatibility Declarations)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-04-17 - Completed 10-03-PLAN.md
 
-**Next Phase:** Phase 9 — SISP Request Language and Required Fields
+**Next Phase:** Phase 11 — Callback Fingerprint Validation Hardening
 
-Progress: █████████░ 94%
+Progress: █████████░ 95%
 
 ## Performance Metrics
 
@@ -37,6 +37,9 @@ All v1.0 decisions logged in PROJECT.md Key Decisions table (12 decisions, all �
 - Phase 9 plan 01: persist redirect handoff fields (`languageMessages`, callback URL, 3DS flag, timestamp, fingerprint, version) directly on the order.
 - Phase 9 plan 02: render the hosted SISP page only from persisted `_vinti4_*` handoff meta.
 - Phase 9 plan 02: send `FingerPrint`, `TimeStamp`, and `FingerPrintVersion` in the redirect action query string while keeping `posAuthCode` out of browser markup.
+- Phase 10 plan 01: centralize WooCommerce feature declarations in `Vinti4_Feature_Compatibility` and execute from `before_woocommerce_init`.
+- Phase 10 plan 02: enforce declaration regressions with dedicated compatibility tests and admin diagnostics.
+- Phase 10 plan 03: accept phase gate with live evidence that the incompatibility warning no longer appears and checkout redirect/return still works.
 
 ### Roadmap Evolution
 
@@ -54,7 +57,7 @@ None.
 ### Blockers/Concerns
 
 - Live checkout finding remains open until Phase 9-02/09-03 confirm the browser request no longer triggers `languageMessages é obrigatório para o funcionamento do Middleware`.
-- Live WooCommerce finding: admin warns the plugin is incompatible with currently enabled WooCommerce features; likely missing compatibility declarations for modern WC features.
+- Admin diagnostics access issue remains in the sandbox for the `Vinti4 Tests` page; compatibility warning regression is resolved, but panel access should be rechecked in the target admin environment.
 - P1 callback fingerprint validation is fragile because the handler sanitizes incoming callback values before recomputing the fingerprint; raw callback values must be preserved for protocol hashing.
 - P1 amount handling is unsafe for the currencies currently exposed in settings: whole-integer normalization may only be valid for CVE-style flows, not EUR/USD.
 - P1 certification/testing coverage is still incomplete beyond the new request-shape checks; success-path callback and `process_payment()` regression tests remain to be added.
@@ -68,6 +71,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-16 21:15 UTC
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-04-17 07:52 UTC
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None
