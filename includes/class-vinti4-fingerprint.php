@@ -67,11 +67,13 @@ class Vinti4_Fingerprint {
 		string $pos_id,
 		string $currency,
 		string $transaction_code,
+		string $auth_mode = 'prehashed',
 		int $amount_multiplier = 1000,
 		string $entity_code = '',
 		string $reference_number = '',
 		string $token = ''
 	): array {
+		$auth_mode         = in_array( $auth_mode, array( 'raw', 'prehashed' ), true ) ? $auth_mode : 'prehashed';
 		$auth_hash_b64      = self::sha512_base64( $pos_auth_code );
 		$amount_multiplier  = in_array( $amount_multiplier, array( 1, 100, 1000 ), true ) ? $amount_multiplier : 1000;
 		$normalized_amount  = (string) ( absint( $amount ) * $amount_multiplier );
@@ -92,7 +94,7 @@ class Vinti4_Fingerprint {
 		}
 
 		$segments = array(
-			'[SHA512_B64(posAuthCode)]',
+			'raw' === $auth_mode ? '[posAuthCode]' : '[SHA512_B64(posAuthCode)]',
 			trim( $timestamp ),
 			$normalized_amount,
 			trim( $merchant_ref ),
@@ -115,7 +117,10 @@ class Vinti4_Fingerprint {
 		}
 
 		return array(
-			'algorithm' => 'sha512_base64( sha512_base64(posAuthCode) + ordered fields )',
+			'algorithm' => 'raw' === $auth_mode
+				? 'sha512_base64( posAuthCode + ordered fields )'
+				: 'sha512_base64( sha512_base64(posAuthCode) + ordered fields )',
+			'auth_mode' => $auth_mode,
 			'sensitive' => array(
 				'posAuthCode' => array(
 					'length'               => strlen( $pos_auth_code ),
@@ -197,14 +202,17 @@ class Vinti4_Fingerprint {
 		string $pos_id,
 		string $currency,
 		string $transaction_code,
+		string $auth_mode = 'prehashed',
 		int $amount_multiplier = 1000,
 		string $entity_code = '',
 		string $reference_number = '',
 		string $token = ''
 	): string {
+		$auth_mode         = in_array( $auth_mode, array( 'raw', 'prehashed' ), true ) ? $auth_mode : 'prehashed';
 		$amount_multiplier = in_array( $amount_multiplier, array( 1, 100, 1000 ), true ) ? $amount_multiplier : 1000;
+		$auth_segment      = 'raw' === $auth_mode ? $pos_auth_code : self::sha512_base64( $pos_auth_code );
 
-		$base = self::sha512_base64( $pos_auth_code )
+		$base = $auth_segment
 			. trim( $timestamp )
 			. (string) ( absint( $amount ) * $amount_multiplier )
 			. trim( $merchant_ref )

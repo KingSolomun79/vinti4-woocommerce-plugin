@@ -338,6 +338,31 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Resolve auth-segment mode used in request fingerprint generation.
+	 *
+	 * Supported values:
+	 * - prehashed (default): first segment is sha512_base64(posAuthCode)
+	 * - raw: first segment is raw posAuthCode
+	 *
+	 * Override with VINTI4_FINGERPRINT_AUTH_MODE in wp-config.php.
+	 *
+	 * @return string
+	 */
+	public function get_fingerprint_auth_mode(): string {
+		$mode = 'prehashed';
+
+		if ( defined( 'VINTI4_FINGERPRINT_AUTH_MODE' ) ) {
+			$mode = (string) VINTI4_FINGERPRINT_AUTH_MODE;
+		}
+
+		if ( ! in_array( $mode, array( 'prehashed', 'raw' ), true ) ) {
+			return 'prehashed';
+		}
+
+		return $mode;
+	}
+
+	/**
 	 * Map a locale or gateway setting value to the SISP language field.
 	 *
 	 * @param mixed $locale Locale-like value.

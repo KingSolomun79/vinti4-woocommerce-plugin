@@ -69,6 +69,7 @@ class Vinti4_Request_Builder {
 		$url_merchant_response = $gateway->get_url_merchant_response();
 		$is_3dsec              = $gateway->get_is_3dsec_flag();
 		$fingerprint_version   = $gateway->get_fingerprint_version();
+		$fingerprint_auth_mode = $gateway->get_fingerprint_auth_mode();
 		$fingerprint_scale     = $gateway->get_fingerprint_amount_scale();
 
 		$purchase_request_json = self::build_purchase_request_json( $order );
@@ -85,6 +86,7 @@ class Vinti4_Request_Builder {
 			$gateway->pos_id,
 			$currency,
 			$transaction_code,
+			$fingerprint_auth_mode,
 			$fingerprint_scale,
 			'', '', ''
 		);
@@ -98,6 +100,7 @@ class Vinti4_Request_Builder {
 			$gateway->pos_id,
 			$currency,
 			$transaction_code,
+			$fingerprint_auth_mode,
 			$fingerprint_scale,
 			'', '', ''
 		);
@@ -121,7 +124,7 @@ class Vinti4_Request_Builder {
 		);
 
 		Vinti4_Logger::log( sprintf(
-			"Payment attempt built:\n  attempt_id: %s\n  order_id: %d\n  merchantRef: %s\n  merchantSession: %s\n  timeStamp: %s\n  amount: %s\n  currency: %s\n  transaction_code: %s\n  languageMessages: %s\n  urlMerchantResponse: %s\n  is3DSec: %s\n  posAuthCode (masked): %s\n  FingerPrintVersion: %s\n  FingerPrintAmountScale: %d\n  FingerPrint: %s",
+			"Payment attempt built:\n  attempt_id: %s\n  order_id: %d\n  merchantRef: %s\n  merchantSession: %s\n  timeStamp: %s\n  amount: %s\n  currency: %s\n  transaction_code: %s\n  languageMessages: %s\n  urlMerchantResponse: %s\n  is3DSec: %s\n  posAuthCode (masked): %s\n  FingerPrintVersion: %s\n  FingerPrintAuthMode: %s\n  FingerPrintAmountScale: %d\n  FingerPrint: %s",
 			$attempt_id,
 			$order->get_id(),
 			$merchant_ref,
@@ -135,6 +138,7 @@ class Vinti4_Request_Builder {
 			$is_3dsec,
 			Vinti4_Logger::mask_auth_code( $gateway->pos_auth_code ),
 			$fingerprint_version,
+			$fingerprint_auth_mode,
 			$fingerprint_scale,
 			$fingerprint
 		) );

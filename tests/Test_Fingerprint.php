@@ -57,6 +57,7 @@ class Test_Fingerprint extends TestCase {
 			$v['pos_id'],
 			$v['currency'],
 			$v['transaction_code'],
+			'prehashed',
 			1000,
 			$v['entity_code'],
 			$v['reference_number'],
@@ -83,6 +84,7 @@ class Test_Fingerprint extends TestCase {
 			$v['pos_id'],
 			$v['currency'],
 			$v['transaction_code'],
+			'prehashed',
 			1000,
 			$v['entity_code']
 		);
@@ -188,6 +190,7 @@ class Test_Fingerprint extends TestCase {
 			'90000414',
 			'132',
 			'1',
+			'prehashed',
 			1000
 		);
 
@@ -200,9 +203,43 @@ class Test_Fingerprint extends TestCase {
 			'90000414',
 			'132',
 			'1',
+			'prehashed',
 			1
 		);
 
 		$this->assertNotSame( $fingerprint_scale_1000, $fingerprint_scale_1 );
+	}
+
+	/**
+	 * Test request fingerprint supports auth mode override.
+	 */
+	public function test_request_fingerprint_changes_with_auth_mode_override(): void {
+		$fingerprint_prehashed = Vinti4_Fingerprint::build_request_fingerprint(
+			'TESTAUTH123',
+			'2026-04-17 08:15:11',
+			'422',
+			'WC817-20260417081511',
+			'ShtUNgPR7H6z6',
+			'90000414',
+			'132',
+			'1',
+			'prehashed',
+			1000
+		);
+
+		$fingerprint_raw = Vinti4_Fingerprint::build_request_fingerprint(
+			'TESTAUTH123',
+			'2026-04-17 08:15:11',
+			'422',
+			'WC817-20260417081511',
+			'ShtUNgPR7H6z6',
+			'90000414',
+			'132',
+			'1',
+			'raw',
+			1000
+		);
+
+		$this->assertNotSame( $fingerprint_prehashed, $fingerprint_raw );
 	}
 }
