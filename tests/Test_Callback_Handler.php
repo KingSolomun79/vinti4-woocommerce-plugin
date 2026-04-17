@@ -274,4 +274,32 @@ class Test_Callback_Handler extends TestCase {
 		$this->expectException( Vinti4_Die_Exception::class );
 		Vinti4_Callback_Handler::handle( $this->gateway );
 	}
+
+	/**
+	 * Test 5: Failure callback without resultFingerPrint should still be processed.
+	 * Expected: order marked as failed and redirected, not wp_die().
+	 */
+	public function test_failure_callback_without_fingerprint_marks_order_failed(): void {
+		$this->order = $this->create_mock_order();
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = array(
+			'messageType'                         => '6',
+			'merchantRespMerchantRef'             => 'WC42-20260416143022',
+			'merchantRespErrorDetail'             => 'Invalid Data',
+			'merchantRespErrorDescription'        => 'Fingerprint Invalid',
+			'merchantRespAdditionalErrorMessage'  => 'Fingerprint Invalid',
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+			$this->fail( 'Expected Vinti4_Redirect_Exception was not thrown' );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected — callback redirects after marking as failed.
+		}
+
+		$this->assertTrue( $this->order->update_status_called, 'Order should be marked as failed.' );
+		$this->assertSame( 'failed', $this->order->updated_status );
+		$this->assertFalse( $this->order->payment_complete_called, 'payment_complete should NOT be called on failure callback.' );
+	}
 }

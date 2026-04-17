@@ -78,9 +78,9 @@ class Vinti4_Callback_Handler {
 		$error_detail              = isset( $post['merchantRespErrorDetail'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespErrorDetail'] ) ) : '';
 		$error_description         = isset( $post['merchantRespErrorDescription'] ) ? sanitize_text_field( wp_unslash( $post['merchantRespErrorDescription'] ) ) : '';
 
-		// Require essential fields — cannot proceed without merchantRef and fingerprint.
-		if ( empty( $merchant_ref ) || empty( $result_fingerprint ) ) {
-			Vinti4_Logger::log( 'Callback rejected: missing merchantRef or resultFingerprint.', 'warning' );
+		// Require merchantRef for all callbacks.
+		if ( empty( $merchant_ref ) ) {
+			Vinti4_Logger::log( 'Callback rejected: missing merchantRef.', 'warning' );
 			wp_die( esc_html__( 'Invalid callback data.', 'vinti4' ) );
 		}
 
@@ -127,6 +127,12 @@ class Vinti4_Callback_Handler {
 		$is_success = vinti4_is_success_message_type( $message_type );
 
 		if ( $is_success ) {
+			if ( empty( $result_fingerprint ) ) {
+				Vinti4_Logger::log( sprintf( 'Callback rejected for order %d: missing resultFingerprint on success messageType %s.', $order_id, $message_type ), 'warning' );
+				$order->update_status( 'failed', __( 'Vinti4 callback missing result fingerprint.', 'vinti4' ) );
+				self::mark_processed_and_redirect( $order, wc_get_checkout_url() );
+			}
+
 			// Step 6 — Validate response fingerprint.
 			$expected_fingerprint = Vinti4_Fingerprint::build_response_fingerprint(
 				$gateway->pos_auth_code,
