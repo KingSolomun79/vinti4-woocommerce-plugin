@@ -389,5 +389,6 @@ require_once __DIR__ . '/../includes/class-vinti4-logger.php';
 require_once __DIR__ . '/../includes/class-vinti4-feature-compatibility.php';
 require_once __DIR__ . '/../includes/class-wc-gateway-vinti4.php';
 require_once __DIR__ . '/../includes/class-vinti4-request-builder.php';
+require_once __DIR__ . '/../includes/class-vinti4-attempt-store.php';
 require_once __DIR__ . '/../includes/class-vinti4-callback-handler.php';
 require_once __DIR__ . '/../includes/class-vinti4-redirect-form.php';

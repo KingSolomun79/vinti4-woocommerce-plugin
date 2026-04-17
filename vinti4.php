@@ -57,6 +57,7 @@ function vinti4_init() {
 	require_once VINTI4_PLUGIN_DIR . 'includes/functions-vinti4-formatting.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-fingerprint.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-request-builder.php';
+	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-attempt-store.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-redirect-form.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-callback-handler.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
