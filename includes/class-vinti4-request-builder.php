@@ -35,42 +35,41 @@ class Vinti4_Request_Builder {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param WC_Order          $order   The WooCommerce order.
-	 * @param WC_Gateway_Vinti4 $gateway The gateway instance with settings.
+	 * @param WC_Order          $order           The WooCommerce order.
+	 * @param WC_Gateway_Vinti4 $gateway         The gateway instance with settings.
+	 * @param array             $attempt_context Optional explicit attempt context.
 	 * @return array {
 	 *     Payment attempt data.
 	 *
 	 *     @type string $attempt_id           Unique UUID for this attempt.
 	 *     @type string $timestamp            Formatted UTC timestamp.
-	 *     @type string $merchant_ref         15-char reference (MM + yymmddHHMMSS + suffix).
-	 *     @type string $merchant_session     15-char session (MS + yymmddHHMMSS + suffix).
+	 *     @type string $merchant_ref         Unique reference (WC{id}-YYYYMMDDHHmmss).
+	 *     @type string $merchant_session     Session identifier (S + 12 random chars).
 	 *     @type string $transaction_code     Transaction code ('1' = Authorization).
 	 *     @type string $amount               Normalized integer amount.
 	 *     @type string $currency             ISO 4217 numeric currency code.
 	 *     @type string $languageMessages     Middleware language field ('pt' or 'en').
 	 *     @type string $urlMerchantResponse  Callback URL for the SISP response.
 	 *     @type string $is3DSec              Hosted 3DS flag expected by SISP.
-	 *     @type string $timeStamp            Transport timestamp for outbound middleware fields.
-	 *     @type string $FingerPrint          Transport fingerprint value for redirect handoff.
-	 *     @type string $FingerPrintVersion   Transport fingerprint version for redirect handoff.
+	 *     @type string $timeStamp            Transport timestamp alias.
+	 *     @type string $FingerPrint          Transport fingerprint alias.
+	 *     @type string $FingerPrintVersion   Fingerprint protocol version.
 	 *     @type string $purchase_request_b64 Base64-encoded purchaseRequest JSON.
 	 *     @type string $fingerprint          SHA-512 + Base64 SISP fingerprint.
 	 * }
 	 */
-	public static function build_payment_attempt( WC_Order $order, WC_Gateway_Vinti4 $gateway ): array {
-		$timestamp             = vinti4_format_timestamp();
-		$attempt_id            = wp_generate_uuid4();
-		$merchant_ref          = vinti4_build_merchant_ref( $order->get_id() );
-		$merchant_session      = vinti4_build_merchant_session();
-		$transaction_code      = '1'; // Authorization.
-		$amount                = (string) vinti4_normalize_amount( (float) $order->get_total() );
-		$currency              = $gateway->get_currency_code( $order );
-		$language_messages     = $gateway->resolve_language_messages();
-		$url_merchant_response = $gateway->get_url_merchant_response();
-		$is_3dsec              = $gateway->get_is_3dsec_flag();
-		$fingerprint_version   = $gateway->get_fingerprint_version();
-		$fingerprint_auth_mode = $gateway->get_fingerprint_auth_mode();
-		$fingerprint_scale     = $gateway->get_fingerprint_amount_scale();
+	public static function build_payment_attempt( WC_Order $order, WC_Gateway_Vinti4 $gateway, array $attempt_context = array() ): array {
+		$timestamp        = self::resolve_context_string( $attempt_context, 'timestamp', vinti4_format_timestamp() );
+		$attempt_id       = self::resolve_context_string( $attempt_context, 'attempt_id', wp_generate_uuid4() );
+		$merchant_ref     = self::resolve_context_string( $attempt_context, 'merchant_ref', vinti4_build_merchant_ref( $order->get_id() ) );
+		$merchant_session = self::resolve_context_string( $attempt_context, 'merchant_session', vinti4_build_merchant_session() );
+		$transaction_code = '1'; // Authorization.
+		$amount           = (string) vinti4_normalize_amount( self::resolve_attempt_amount( $order, $attempt_context ) );
+		$currency         = $gateway->get_currency_code( $order );
+		$language_messages = self::resolve_language_messages( (string) $gateway->language );
+		$url_merchant_response = self::build_url_merchant_response();
+		$is_3dsec = '1';
+		$fingerprint_version = '1';
 
 		$purchase_request_json = self::build_purchase_request_json( $order );
 		$purchase_request_b64  = base64_encode(
@@ -86,26 +85,10 @@ class Vinti4_Request_Builder {
 			$gateway->pos_id,
 			$currency,
 			$transaction_code,
-			$fingerprint_auth_mode,
-			$fingerprint_scale,
 			'', '', ''
 		);
 
-		$fingerprint_debug_snapshot = Vinti4_Fingerprint::build_request_fingerprint_debug_snapshot(
-			$gateway->pos_auth_code,
-			$timestamp,
-			$amount,
-			$merchant_ref,
-			$merchant_session,
-			$gateway->pos_id,
-			$currency,
-			$transaction_code,
-			$fingerprint_auth_mode,
-			$fingerprint_scale,
-			'', '', ''
-		);
-
-		$result = array(
+		return array(
 			'attempt_id'           => $attempt_id,
 			'timestamp'            => $timestamp,
 			'timeStamp'            => $timestamp,
@@ -122,35 +105,128 @@ class Vinti4_Request_Builder {
 			'purchase_request_b64' => $purchase_request_b64,
 			'fingerprint'          => $fingerprint,
 		);
+	}
 
-		Vinti4_Logger::log( sprintf(
-			"Payment attempt built:\n  attempt_id: %s\n  order_id: %d\n  merchantRef: %s\n  merchantSession: %s\n  timeStamp: %s\n  amount: %s\n  currency: %s\n  transaction_code: %s\n  languageMessages: %s\n  urlMerchantResponse: %s\n  is3DSec: %s\n  posAuthCode (masked): %s\n  FingerPrintVersion: %s\n  FingerPrintAuthMode: %s\n  FingerPrintAmountScale: %d\n  FingerPrint: %s",
-			$attempt_id,
-			$order->get_id(),
-			$merchant_ref,
-			$merchant_session,
-			$timestamp,
-			$amount,
-			$currency,
-			$transaction_code,
-			$language_messages,
-			$url_merchant_response,
-			$is_3dsec,
-			Vinti4_Logger::mask_auth_code( $gateway->pos_auth_code ),
-			$fingerprint_version,
-			$fingerprint_auth_mode,
-			$fingerprint_scale,
-			$fingerprint
-		) );
+	/**
+	 * Resolve a scalar context value to a normalized string.
+	 *
+	 * @param array  $context Attempt context.
+	 * @param string $key     Context key.
+	 * @param string $default Fallback value.
+	 * @return string
+	 */
+	private static function resolve_context_string( array $context, string $key, string $default ): string {
+		if ( ! array_key_exists( $key, $context ) ) {
+			return $default;
+		}
 
-		Vinti4_Logger::log(
-			'Fingerprint request canonical snapshot: ' . wp_json_encode(
-				$fingerprint_debug_snapshot,
-				JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-			)
-		);
+		$value = $context[ $key ];
 
-		return $result;
+		if ( ! is_scalar( $value ) ) {
+			return $default;
+		}
+
+		$normalized = trim( (string) $value );
+
+		return '' === $normalized ? $default : $normalized;
+	}
+
+	/**
+	 * Resolve attempt amount from explicit context or order fallback.
+	 *
+	 * @param WC_Order $order   WooCommerce order.
+	 * @param array    $context Attempt context.
+	 * @return float
+	 */
+	private static function resolve_attempt_amount( WC_Order $order, array $context ): float {
+		if ( array_key_exists( 'amount', $context ) && is_scalar( $context['amount'] ) ) {
+			return (float) $context['amount'];
+		}
+
+		return (float) $order->get_total();
+	}
+
+	/**
+	 * Resolve middleware language value.
+	 *
+	 * @param string $gateway_language Configured gateway language value.
+	 * @return string
+	 */
+	private static function resolve_language_messages( string $gateway_language ): string {
+		$normalized = strtolower( trim( $gateway_language ) );
+
+		if ( 'en' === $normalized ) {
+			return 'en';
+		}
+
+		return 'pt';
+	}
+
+	/**
+	 * Build and normalize callback URL sent to middleware.
+	 *
+	 * @return string
+	 */
+	private static function build_url_merchant_response(): string {
+		$url = '';
+
+		if ( function_exists( 'WC' ) ) {
+			$wc = WC();
+
+			if ( null !== $wc && method_exists( $wc, 'api_request_url' ) ) {
+				$generated = $wc->api_request_url( 'vinti4' );
+
+				if ( is_string( $generated ) ) {
+					$url = $generated;
+				}
+			}
+		}
+
+		if ( '' === $url ) {
+			$url = home_url( '/wc-api/vinti4/' );
+		}
+
+		return self::normalize_merchant_response_url( $url );
+	}
+
+	/**
+	 * Normalize callback URL values to absolute URL.
+	 *
+	 * @param string $url Callback URL candidate.
+	 * @return string
+	 */
+	private static function normalize_merchant_response_url( string $url ): string {
+		$trimmed_url = trim( $url );
+
+		if ( '' === $trimmed_url ) {
+			return home_url( '/wc-api/vinti4/' );
+		}
+
+		$parts = parse_url( $trimmed_url );
+
+		if ( false === $parts ) {
+			return home_url( '/wc-api/vinti4/' );
+		}
+
+		if ( ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
+			return $trimmed_url;
+		}
+
+		if ( 0 === strpos( $trimmed_url, '//' ) ) {
+			$home_scheme = parse_url( home_url( '/' ), PHP_URL_SCHEME );
+
+			if ( ! is_string( $home_scheme ) || '' === $home_scheme ) {
+				$home_scheme = 'https';
+			}
+
+			return $home_scheme . ':' . $trimmed_url;
+		}
+
+		if ( 0 !== strpos( $trimmed_url, '/' ) ) {
+			$trimmed_url = '/' . $trimmed_url;
+		}
+
+		return home_url( $trimmed_url );
 	}
 
 	/**

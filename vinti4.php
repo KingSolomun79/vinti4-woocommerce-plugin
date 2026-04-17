@@ -27,17 +27,6 @@ define( 'VINTI4_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Load admin notices unconditionally — must work even without WooCommerce.
 require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-notices.php';
-require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-feature-compatibility.php';
-
-/**
- * Declare WooCommerce compatibility features for Vinti4.
- *
- * @return void
- */
-function vinti4_declare_woocommerce_compatibility() {
-	Vinti4_Feature_Compatibility::declare_compatibility();
-}
-add_action( 'before_woocommerce_init', 'vinti4_declare_woocommerce_compatibility' );
 
 /**
  * Bootstrap the plugin after all other plugins are loaded.
@@ -57,10 +46,11 @@ function vinti4_init() {
 	require_once VINTI4_PLUGIN_DIR . 'includes/functions-vinti4-formatting.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-fingerprint.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-request-builder.php';
+	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-attempt-factory.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-attempt-store.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-redirect-form.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-callback-handler.php';
-	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
+	// Phase 7: require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-wc-vinti4-blocks-support.php';
 
 	// Register the vinti4-payment rewrite endpoint.
