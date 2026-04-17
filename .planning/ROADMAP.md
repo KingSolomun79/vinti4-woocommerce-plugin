@@ -27,10 +27,12 @@ Investigate and fix the checkout error `languageMessages é obrigatório para o 
 
 **Goal:** Remove the WooCommerce incompatibility warning by declaring and validating support for the currently enabled WooCommerce features
 **Depends on:** Phase 9
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 10 to break down)
+- [ ] 10-01-PLAN.md - Add WooCommerce feature compatibility declarations in plugin bootstrap
+- [ ] 10-02-PLAN.md - Add regression coverage and diagnostics for feature compatibility declarations
+- [ ] 10-03-PLAN.md - Verify in a real WordPress admin that incompatibility warnings are gone
 
 **Details:**
 Investigate the admin warning `You are viewing active plugins that are incompatible with currently enabled WooCommerce features.` Add the required WooCommerce feature compatibility declarations and any related bootstrap adjustments so the plugin is recognized as compatible with the enabled WooCommerce feature set.
@@ -96,7 +98,7 @@ Clean up stray files, restore proper WordPress packaging metadata, re-enable or 
 | 7. Logging & Diagnostics | v1.0 | 2/2 | ✓ Complete | 2026-04-16 |
 | 8. Testing & Certification Prep | v1.0 | 2/2 | ✓ Complete | 2026-04-16 |
 | 9. SISP Request Language and Required Fields | v1.1 | 2/3 | In progress | - |
-| 10. WooCommerce Feature Compatibility Declarations | v1.1 | 0/0 | Planned | - |
+| 10. WooCommerce Feature Compatibility Declarations | v1.1 | 0/3 | Planned | - |
 | 11. Callback Fingerprint Validation Hardening | v1.1 | 0/0 | Planned | - |
 | 12. Currency and Amount Handling Correction | v1.1 | 0/0 | Planned | - |
 | 13. Verification Coverage and Test Truthfulness | v1.1 | 0/0 | Planned | - |
