@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 ## Current Position
 
-Phase: 9 of 11 (Partial Attempt Foundation) — Not started
-Plan: —
-Status: Milestone initialized — ready for phase planning
-Last activity: 2026-04-17 — Created milestone v1.1 requirements and roadmap
+Phase: 9 of 11 (Attempt Foundation and Persistence)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-04-17 — Completed 09-01-PLAN.md
 
-Progress: █░░░░░░░░░ 9%
+Progress: █████████░ 91%
 
 ## Performance Metrics
 
@@ -92,10 +92,13 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 06-01: canMakePayment always returns true — availability controlled server-side by is_active()
 - 06-01: Block registration hook outside vinti4_init() at top level (same pattern as gateway filter)
 - 06-01: Settings read from same woocommerce_vinti4_settings option as gateway class
+- 09-01: _vinti4_attempt_history is the canonical append-only persistence key for attempt history
+- 09-01: Attempt ordering is deterministic oldest-first using created_at_gmt and sequence tie-break
+- 09-01: Legacy _vinti4_* keys are compatibility projection outputs, not the history source of truth
 
 ### Pending Todos
 
-None.
+- PHP CLI is unavailable in the current execution environment; lint and PHPUnit verification for 09-01 must be rerun in a PHP-enabled environment.
 
 ### Blockers/Concerns
 
@@ -103,6 +106,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-16
-Stopped at: Completed 06-01-PLAN.md (Phase 6 complete)
+Last session: 2026-04-17 14:34 UTC
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
