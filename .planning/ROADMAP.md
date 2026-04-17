@@ -12,7 +12,7 @@ Milestone v1.1 extends the shipped v1.0 hosted-card flow with partial deposits a
 
 ## Phases
 
-- [ ] **Phase 9: Attempt Foundation and Persistence** - Add attempt data model, generation, and append-only history on orders
+- [x] **Phase 9: Attempt Foundation and Persistence** - Add attempt data model, generation, and append-only history on orders
 - [ ] **Phase 10: Admin Partial Request Flow** - Add dashboard/admin flow for selecting partial amount and sending new payment request attempts
 - [ ] **Phase 11: Callback Reconciliation and Compatibility Verification** - Resolve callback by attempt context, enforce per-attempt idempotency, and verify card-flow compatibility
 
@@ -31,7 +31,7 @@ Milestone v1.1 extends the shipped v1.0 hosted-card flow with partial deposits a
 
 Plans:
 - [x] 09-01-PLAN.md — Introduce attempt storage model and append-only history helpers on orders
-- [ ] 09-02-PLAN.md — Add attempt factory service to generate unique merchantRef/session/fingerprint from partial attempt input
+- [x] 09-02-PLAN.md — Add attempt factory service to generate unique merchantRef/session/fingerprint from partial attempt input
 
 ### Phase 10: Admin Partial Request Flow
 **Goal**: Admin can send payment requests for partial amounts safely and predictably.
@@ -71,6 +71,6 @@ Phases execute in numeric order: 9 -> 10 -> 11
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 9. Attempt Foundation and Persistence | 1/2 | In progress | - |
+| 9. Attempt Foundation and Persistence | 2/2 | Complete | 2026-04-17 |
 | 10. Admin Partial Request Flow | 0/2 | Not started | - |
 | 11. Callback Reconciliation and Compatibility Verification | 0/2 | Not started | - |

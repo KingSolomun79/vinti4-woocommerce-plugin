@@ -9,10 +9,10 @@ Requirements for this milestone only (partial deposits and multi-attempt payment
 
 ### Multi-Attempt Generation
 
-- [ ] **ATT-01**: Admin can create a new payment attempt from an existing WooCommerce order without re-running checkout
-- [ ] **ATT-02**: Each new attempt creates a unique `merchantRef` and `merchantSession`
-- [ ] **ATT-03**: Request fingerprint is generated from attempt-scoped data, with amount bound to that attempt
-- [ ] **ATT-04**: Attempt metadata is stored as append-only history (no overwrite of previous attempt records)
+- [x] **ATT-01**: Admin can create a new payment attempt from an existing WooCommerce order without re-running checkout
+- [x] **ATT-02**: Each new attempt creates a unique `merchantRef` and `merchantSession`
+- [x] **ATT-03**: Request fingerprint is generated from attempt-scoped data, with amount bound to that attempt
+- [x] **ATT-04**: Attempt metadata is stored as append-only history (no overwrite of previous attempt records)
 
 ### Partial Amount Rules
 
@@ -75,10 +75,10 @@ Which phase covers which requirement. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ATT-01 | Phase 9 | Pending |
-| ATT-02 | Phase 9 | Pending |
-| ATT-03 | Phase 9 | Pending |
-| ATT-04 | Phase 9 | Pending |
+| ATT-01 | Phase 9 | Complete |
+| ATT-02 | Phase 9 | Complete |
+| ATT-03 | Phase 9 | Complete |
+| ATT-04 | Phase 9 | Complete |
 | PART-01 | Phase 10 | Pending |
 | PART-02 | Phase 10 | Pending |
 | PART-03 | Phase 10 | Pending |
@@ -99,4 +99,4 @@ Which phase covers which requirement. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-17*
-*Last updated: 2026-04-17 after milestone v1.1 initialization*
+*Last updated: 2026-04-17 after Phase 9 completion and verification*
