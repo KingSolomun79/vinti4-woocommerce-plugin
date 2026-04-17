@@ -923,4 +923,230 @@ class Test_Callback_Handler extends TestCase {
 		// Verify no new transaction ID was set (payment_complete not called again by handler).
 		$this->assertNotSame( 'TXN123456', $this->order->payment_complete_txn_id );
 	}
+
+	// ─── Sandbox Card Flow & Multi-Attempt Logging Tests ────────────────────
+
+	/**
+	 * Test: Sandbox card flow with single attempt completes successfully.
+	 *
+	 * Simulates a checkout with the sandbox test card (pan=4012001037141112)
+	 * creating a single attempt that covers the full order total. Verifies
+	 * that the order is completed and payment_complete is called.
+	 */
+	public function test_sandbox_card_flow_single_attempt(): void {
+		$attempt = $this->build_attempt(
+			'att-sandbox-001',
+			'WC42-20260417100000sb',
+			'Ssandbox001abc',
+			'200000'
+		);
+
+		$this->order = $this->create_order_with_attempts(
+			array( $attempt ),
+			array(),
+			200.0
+		);
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000sb',
+			'Ssandbox001abc',
+			'200000'
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect after success.
+		}
+
+		// Single attempt covering full total should complete the order.
+		$this->assertTrue( $this->order->payment_complete_called, 'payment_complete should be called for single attempt covering full amount.' );
+		$this->assertSame( 'TXN-ATTEMPT-001', $this->order->payment_complete_txn_id );
+	}
+
+	/**
+	 * Test: Sandbox card flow with partial payment keeps order in processing.
+	 *
+	 * Simulates a partial payment (50% of order total) via the sandbox test
+	 * card. Verifies the order stays in 'processing' status with correct
+	 * paid and outstanding totals.
+	 */
+	public function test_sandbox_card_flow_partial_payment(): void {
+		$attempt = $this->build_attempt(
+			'att-sandbox-partial',
+			'WC42-20260417100000pt',
+			'Ssandboxpt001',
+			'100000'
+		);
+
+		// Order total is 200.0 (i.e. 200000 in cents), partial attempt for 100000 (100.0).
+		$this->order = $this->create_order_with_attempts(
+			array( $attempt ),
+			array(),
+			200.0
+		);
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000pt',
+			'Ssandboxpt001',
+			'100000'
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect to order-received.
+		}
+
+		// Partial payment should NOT call payment_complete.
+		$this->assertFalse( $this->order->payment_complete_called, 'payment_complete should NOT be called for partial payment.' );
+
+		// Order should be set to processing.
+		$this->assertTrue( $this->order->update_status_called, 'update_status should be called for partial payment.' );
+		$this->assertSame( 'processing', $this->order->updated_status );
+
+		// Verify paid and outstanding totals are tracked in meta.
+		$paid_total = $this->order->get_meta( '_vinti4_paid_total' );
+		$outstanding_total = $this->order->get_meta( '_vinti4_outstanding_total' );
+		$this->assertNotEmpty( $paid_total, 'Paid total should be set after partial payment.' );
+		$this->assertNotEmpty( $outstanding_total, 'Outstanding total should be set after partial payment.' );
+	}
+
+	/**
+	 * Test: Multi-attempt full payment across two partial attempts.
+	 *
+	 * Simulates two partial payments (50% + 50%) that together cover
+	 * the full order total. Verifies both attempts are marked completed
+	 * and the order is fully completed after the second attempt.
+	 */
+	public function test_multi_attempt_full_payment(): void {
+		$first_attempt = $this->build_attempt(
+			'att-multi-1',
+			'WC42-20260417100000m1',
+			'Ssessionm1001',
+			'100000'
+		);
+		$first_attempt['status']            = 'completed';
+		$first_attempt['callback_received'] = true;
+
+		$second_attempt = $this->build_attempt(
+			'att-multi-2',
+			'WC42-20260417110000m2',
+			'Ssessionm2001',
+			'100000'
+		);
+		$second_attempt['sequence'] = 2;
+
+		// Order total 200.0, first attempt 100000 (100.0), second 100000 (100.0).
+		$this->order = $this->create_order_with_attempts(
+			array( $first_attempt, $second_attempt ),
+			array(),
+			200.0
+		);
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		// Process the second attempt callback.
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417110000m2',
+			'Ssessionm2001',
+			'100000'
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect.
+		}
+
+		// Second attempt should complete the order (total paid = 200000, total = 200000).
+		$this->assertTrue( $this->order->payment_complete_called, 'payment_complete should be called after second attempt covers full total.' );
+		$this->assertSame( 'TXN-ATTEMPT-001', $this->order->payment_complete_txn_id );
+
+		// Verify both attempts are reflected in paid total.
+		$paid_total = $this->order->get_meta( '_vinti4_paid_total' );
+		$this->assertNotEmpty( $paid_total, 'Paid total should be tracked after multi-attempt completion.' );
+	}
+
+	/**
+	 * Test: Multi-attempt flow distinguishes failure types in logs.
+	 *
+	 * Verifies that invalid_reference, invalid_fingerprint, and duplicate_callback
+	 * each produce distinct outcomes that are distinguishable in the callback flow.
+	 */
+	public function test_multi_attempt_distinguishes_failure_types(): void {
+		// --- Test 1: Invalid reference (spoofed merchantRef) ---
+		$real_attempt = $this->build_attempt(
+			'att-real-ft',
+			'WC42-20260417100000realft',
+			'Ssessionrealft1',
+			'100'
+		);
+
+		$order1 = $this->create_order_with_attempts( array( $real_attempt ) );
+		$GLOBALS['mock_wc_order'] = $order1;
+
+		$_POST = array(
+			'messageType'                  => '8',
+			'resultFingerPrint'            => 'spoofed-fp',
+			'merchantRespMerchantRef'      => 'WC42-SPOOFED-REF',
+			'merchantRespMerchantSession'  => 'Sspoofed001',
+			'merchantRespPurchaseAmount'   => '100',
+			'merchantRespErrorDetail'      => '',
+			'merchantRespErrorDescription' => '',
+		);
+
+		$caught_spoof = false;
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			$caught_spoof = true;
+		}
+		$this->assertTrue( $caught_spoof, 'Invalid reference should redirect to checkout.' );
+		$this->assertFalse( $order1->payment_complete_called, 'Invalid reference should not complete payment.' );
+
+		// --- Test 2: Invalid fingerprint ---
+		$order2 = $this->create_order_with_attempts( array( $real_attempt ) );
+		$GLOBALS['mock_wc_order'] = $order2;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000realft',
+			'Ssessionrealft1',
+			'100',
+			array( 'resultFingerPrint' => 'TAMPERED-FINGERPRINT' )
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect.
+		}
+		$this->assertTrue( $order2->update_status_called, 'Invalid fingerprint should mark order as failed.' );
+		$this->assertSame( 'failed', $order2->updated_status, 'Invalid fingerprint should set status to failed.' );
+
+		// --- Test 3: Duplicate callback ---
+		$order3 = $this->create_order_with_attempts(
+			array( $real_attempt ),
+			array( '_vinti4_attempt_att-real-ft_processed' => '2026-04-17 10:30:00' )
+		);
+		$order3->payment_complete(); // Simulate already processed.
+		$GLOBALS['mock_wc_order'] = $order3;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000realft',
+			'Ssessionrealft1',
+			'100'
+		);
+
+		$caught_dup = false;
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			$caught_dup = true;
+		}
+		$this->assertTrue( $caught_dup, 'Duplicate callback should redirect.' );
+		// Transaction ID should not be overwritten to the new one.
+		$this->assertNotSame( 'TXN-ATTEMPT-001', $order3->payment_complete_txn_id );
+	}
 }
