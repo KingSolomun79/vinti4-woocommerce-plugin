@@ -1028,7 +1028,7 @@ class Test_Callback_Handler extends TestCase {
 			'att-multi-1',
 			'WC42-20260417100000m1',
 			'Ssessionm1001',
-			'100000'
+			'100'
 		);
 		$first_attempt['status']            = 'completed';
 		$first_attempt['callback_received'] = true;
@@ -1037,11 +1037,11 @@ class Test_Callback_Handler extends TestCase {
 			'att-multi-2',
 			'WC42-20260417110000m2',
 			'Ssessionm2001',
-			'100000'
+			'100'
 		);
 		$second_attempt['sequence'] = 2;
 
-		// Order total 200.0, first attempt 100000 (100.0), second 100000 (100.0).
+		// Order total 200.0, first attempt 100.0 (already completed), second 100.0.
 		$this->order = $this->create_order_with_attempts(
 			array( $first_attempt, $second_attempt ),
 			array(),
@@ -1053,7 +1053,7 @@ class Test_Callback_Handler extends TestCase {
 		$_POST = $this->attempt_post_payload(
 			'WC42-20260417110000m2',
 			'Ssessionm2001',
-			'100000'
+			'100'
 		);
 
 		try {
@@ -1062,7 +1062,7 @@ class Test_Callback_Handler extends TestCase {
 			// Expected redirect.
 		}
 
-		// Second attempt should complete the order (total paid = 200000, total = 200000).
+		// Second attempt should complete the order (total paid = 200.0, total = 200.0).
 		$this->assertTrue( $this->order->payment_complete_called, 'payment_complete should be called after second attempt covers full total.' );
 		$this->assertSame( 'TXN-ATTEMPT-001', $this->order->payment_complete_txn_id );
 
