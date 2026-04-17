@@ -44,37 +44,40 @@ function vinti4_format_timestamp(): string {
 /**
  * Build a unique merchant reference for a payment attempt.
  *
- * Combines the WooCommerce order ID with a timestamp to produce a
- * unique-per-attempt reference string in the pattern WC{id}-YYYYMMDDHHmmss.
+ * Builds a 15-character reference in the format MM + yymmddHHMMSS + suffix.
+ *
+ * SISP integrations may enforce fixed-length merchantRef/merchantSession
+ * values. This helper keeps merchantRef at exactly 15 characters.
  *
  * @since 1.0.0
  *
- * @param int $order_id The WooCommerce order ID.
- * @return string Merchant reference e.g. 'WC42-20260416143022'.
+ * @param int $order_id Optional order ID (kept for backward compatibility).
+ * @return string Merchant reference e.g. 'MM2604170944241'.
  */
 function vinti4_build_merchant_ref( int $order_id ): string {
-	return 'WC' . $order_id . '-' . gmdate( 'YmdHis' );
+	unset( $order_id );
+
+	return 'MM' . gmdate( 'ymdHis' ) . (string) mt_rand( 0, 9 );
 }
 
 /**
  * Generate a random merchant session identifier.
  *
- * Produces a 13-character alphanumeric string prefixed with 'S',
- * suitable for use as the merchantSession field in SISP requests.
+ * Produces a 15-character value in the format MS + yymmddHHMMSS + suffix.
  *
  * @since 1.0.0
  *
- * @return string Session identifier e.g. 'Sabc123def456'.
+ * @return string Session identifier e.g. 'MS2604170944242'.
  */
 function vinti4_build_merchant_session(): string {
-	return 'S' . wp_generate_password( 12, false, false );
+	return 'MS' . gmdate( 'ymdHis' ) . (string) mt_rand( 0, 9 );
 }
 
 /**
  * Parse the order ID from a merchant reference string.
  *
- * Extracts the numeric order ID from the merchantRef pattern WC{id}-...
- * using a regex match. Returns 0 if the pattern doesn't match.
+ * Extracts the numeric order ID from legacy merchantRef pattern WC{id}-...
+ * using a regex match. Returns 0 for fixed-length MM/MS style references.
  *
  * @since 1.0.0
  *
@@ -85,6 +88,37 @@ function vinti4_parse_order_id_from_ref( string $merchant_ref ): int {
 	if ( preg_match( '/^WC(\d+)-/', $merchant_ref, $matches ) ) {
 		return (int) $matches[1];
 	}
+	return 0;
+}
+
+/**
+ * Find order ID by stored merchantRef meta.
+ *
+ * Used for fixed-length merchantRef formats that do not embed order IDs.
+ *
+ * @param string $merchant_ref Merchant reference received from callback.
+ * @return int Order ID or 0 when not found.
+ */
+function vinti4_find_order_id_by_merchant_ref( string $merchant_ref ): int {
+	if ( '' === trim( $merchant_ref ) || ! function_exists( 'wc_get_orders' ) ) {
+		return 0;
+	}
+
+	$orders = wc_get_orders(
+		array(
+			'limit'      => 1,
+			'return'     => 'ids',
+			'meta_key'   => '_vinti4_merchant_ref',
+			'meta_value' => $merchant_ref,
+			'orderby'    => 'date',
+			'order'      => 'DESC',
+		)
+	);
+
+	if ( is_array( $orders ) && ! empty( $orders[0] ) ) {
+		return (int) $orders[0];
+	}
+
 	return 0;
 }
 

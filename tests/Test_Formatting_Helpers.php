@@ -65,6 +65,47 @@ class Test_Formatting_Helpers extends TestCase {
 		$this->assertSame( 0, vinti4_parse_order_id_from_ref( '' ) );
 	}
 
+	/**
+	 * Fixed-length merchant refs do not embed order IDs.
+	 */
+	public function test_parse_order_id_fixed_length_ref_returns_zero(): void {
+		$this->assertSame( 0, vinti4_parse_order_id_from_ref( 'MM2604170944241' ) );
+	}
+
+	/**
+	 * merchantRef is generated as 15 chars with MM prefix.
+	 */
+	public function test_build_merchant_ref_has_mm_prefix_and_fixed_length(): void {
+		$ref = vinti4_build_merchant_ref( 42 );
+
+		$this->assertSame( 15, strlen( $ref ) );
+		$this->assertSame( 'MM', substr( $ref, 0, 2 ) );
+	}
+
+	/**
+	 * merchantSession is generated as 15 chars with MS prefix.
+	 */
+	public function test_build_merchant_session_has_ms_prefix_and_fixed_length(): void {
+		$session = vinti4_build_merchant_session();
+
+		$this->assertSame( 15, strlen( $session ) );
+		$this->assertSame( 'MS', substr( $session, 0, 2 ) );
+	}
+
+	/**
+	 * Order lookup by merchantRef resolves when wc_get_orders can find a match.
+	 */
+	public function test_find_order_id_by_merchant_ref_uses_meta_lookup(): void {
+		$GLOBALS['mock_wc_orders_by_ref'] = array(
+			'MM2604170944241' => 819,
+		);
+
+		$this->assertSame( 819, vinti4_find_order_id_by_merchant_ref( 'MM2604170944241' ) );
+		$this->assertSame( 0, vinti4_find_order_id_by_merchant_ref( 'MM2604170944242' ) );
+
+		unset( $GLOBALS['mock_wc_orders_by_ref'] );
+	}
+
 	// ─── vinti4_shape_phone ────────────────────────────────────────────────
 
 	/**

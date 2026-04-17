@@ -118,6 +118,18 @@ if ( ! function_exists( 'wc_get_order' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wc_get_orders' ) ) {
+	function wc_get_orders( $args = array() ) {
+		$merchant_ref = $args['meta_value'] ?? '';
+
+		if ( isset( $GLOBALS['mock_wc_orders_by_ref'][ $merchant_ref ] ) ) {
+			return array( (int) $GLOBALS['mock_wc_orders_by_ref'][ $merchant_ref ] );
+		}
+
+		return array();
+	}
+}
+
 if ( ! function_exists( 'wc_get_checkout_url' ) ) {
 	function wc_get_checkout_url() {
 		return '/checkout/';

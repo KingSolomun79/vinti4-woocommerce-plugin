@@ -88,6 +88,10 @@ class Vinti4_Callback_Handler {
 		$order_id = vinti4_parse_order_id_from_ref( $merchant_ref );
 
 		if ( 0 === $order_id ) {
+			$order_id = vinti4_find_order_id_by_merchant_ref( $merchant_ref );
+		}
+
+		if ( 0 === $order_id ) {
 			Vinti4_Logger::log( sprintf( 'Callback rejected: could not parse order ID from merchantRef "%s".', $merchant_ref ), 'warning' );
 			wp_die( esc_html__( 'Invalid merchant reference.', 'vinti4' ), '', array( 'response' => 400 ) );
 		}

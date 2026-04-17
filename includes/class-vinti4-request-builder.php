@@ -42,8 +42,8 @@ class Vinti4_Request_Builder {
 	 *
 	 *     @type string $attempt_id           Unique UUID for this attempt.
 	 *     @type string $timestamp            Formatted UTC timestamp.
-	 *     @type string $merchant_ref         Unique reference (WC{id}-YYYYMMDDHHmmss).
-	 *     @type string $merchant_session     Session identifier (S + 12 random chars).
+	 *     @type string $merchant_ref         15-char reference (MM + yymmddHHMMSS + suffix).
+	 *     @type string $merchant_session     15-char session (MS + yymmddHHMMSS + suffix).
 	 *     @type string $transaction_code     Transaction code ('1' = Authorization).
 	 *     @type string $amount               Normalized integer amount.
 	 *     @type string $currency             ISO 4217 numeric currency code.

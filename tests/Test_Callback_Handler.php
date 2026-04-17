@@ -52,6 +52,7 @@ class Test_Callback_Handler extends TestCase {
 		$_POST = array();
 		$_GET  = array();
 		unset( $GLOBALS['mock_wc_order'] );
+		unset( $GLOBALS['mock_wc_orders_by_ref'] );
 	}
 
 	/**
@@ -328,6 +329,37 @@ class Test_Callback_Handler extends TestCase {
 			$this->fail( 'Expected Vinti4_Redirect_Exception was not thrown' );
 		} catch ( Vinti4_Redirect_Exception $e ) {
 			// Expected — callback redirects after marking as failed.
+		}
+
+		$this->assertTrue( $this->order->update_status_called, 'Order should be marked as failed.' );
+		$this->assertSame( 'failed', $this->order->updated_status );
+	}
+
+	/**
+	 * Test 7: Fixed-length merchantRef resolves order ID via meta lookup.
+	 */
+	public function test_fixed_length_merchant_ref_resolves_order_via_lookup(): void {
+		$this->order = $this->create_mock_order( array(
+			'_vinti4_merchant_ref' => 'MM2604170944241',
+		) );
+		$GLOBALS['mock_wc_order'] = $this->order;
+		$GLOBALS['mock_wc_orders_by_ref'] = array(
+			'MM2604170944241' => 42,
+		);
+
+		$_POST = array(
+			'messageType'                        => '6',
+			'merchantRespMerchantRef'            => 'MM2604170944241',
+			'merchantRespErrorDetail'            => 'Invalid Data',
+			'merchantRespErrorDescription'       => 'Fingerprint Invalid',
+			'merchantRespAdditionalErrorMessage' => 'Fingerprint Invalid',
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+			$this->fail( 'Expected Vinti4_Redirect_Exception was not thrown' );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected.
 		}
 
 		$this->assertTrue( $this->order->update_status_called, 'Order should be marked as failed.' );
