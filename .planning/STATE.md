@@ -2,53 +2,96 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-16)
+See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** v1.1 compatibility fixes — resolve live checkout blocker, SISP request-shape issues, and WooCommerce compatibility warning first, then close the remaining audit gaps
+**Current focus:** Milestone v1.1 definition complete — roadmap ready for Phase 9 planning
 
 ## Current Position
 
-Phase: 10 of 14 (WooCommerce Feature Compatibility Declarations)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-04-17 - Completed 10-03-PLAN.md
+Phase: 9 of 11 (Partial Attempt Foundation) — Not started
+Plan: —
+Status: Milestone initialized — ready for phase planning
+Last activity: 2026-04-17 — Created milestone v1.1 requirements and roadmap
 
-**Next Phase:** Phase 11 — Callback Fingerprint Validation Hardening
-
-Progress: █████████░ 95%
+Progress: █░░░░░░░░░ 9%
 
 ## Performance Metrics
 
-**v1.0 Milestone:**
-- Total plans completed: 15
-- Total execution time: ~69 min
-- Total commits: 72
-- Production LOC: ~2,069 PHP, ~112 JS
-- Test LOC: ~869 PHP (27 tests, 39 assertions)
+**Velocity:**
+- Total plans completed: 11
+- Average duration: ~4 min
+- Total execution time: ~42 min
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 01-safe-bootstrap | 1 | ~17 min | ~17 min |
+| 02-gateway-settings | 2 | ~3 min | ~1.5 min |
+| 03-fingerprint-request-builder | 2 | ~4 min | ~2 min |
+| 04-payment-redirect-flow | 2 | ~9 min | ~4.5 min |
+| 05-callback-idempotency | 3 | ~8 min | ~2.7 min |
+| 06-checkout-block-support | 1 | ~1 min | ~1 min |
+
+**Recent Trend:**
+- Last 5 plans: 05-02 (~2 min), 05-03 (~3 min), 06-01 (~1 min)
+- Trend: Accelerating — block support was straightforward
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
 ### Decisions
 
-All v1.0 decisions logged in PROJECT.md Key Decisions table (12 decisions, all ✓ Good).
+Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecting current work:
 
-- Phase 9 plan 01: resolve `languageMessages` from active locale first, then gateway setting, then `pt`.
-- Phase 9 plan 01: persist redirect handoff fields (`languageMessages`, callback URL, 3DS flag, timestamp, fingerprint, version) directly on the order.
-- Phase 9 plan 02: render the hosted SISP page only from persisted `_vinti4_*` handoff meta.
-- Phase 9 plan 02: send `FingerPrint`, `TimeStamp`, and `FingerPrintVersion` in the redirect action query string while keeping `posAuthCode` out of browser markup.
-- Phase 10 plan 01: centralize WooCommerce feature declarations in `Vinti4_Feature_Compatibility` and execute from `before_woocommerce_init`.
-- Phase 10 plan 02: enforce declaration regressions with dedicated compatibility tests and admin diagnostics.
-- Phase 10 plan 03: accept phase gate with live evidence that the incompatibility warning no longer appears and checkout redirect/return still works.
-
-### Roadmap Evolution
-
-- Phase 9 added: SISP Request Language and Required Fields
-- Phase 10 added: WooCommerce Feature Compatibility Declarations
-- Phase 11 added: Callback Fingerprint Validation Hardening
-- Phase 12 added: Currency and Amount Handling Correction
-- Phase 13 added: Verification Coverage and Test Truthfulness
-- Phase 14 added: Packaging and Production Polish
+- Init: Gateway ID is `vinti4` (string, not numeric)
+- Init: Hosted redirect flow (not API-based)
+- Init: Currency auto-detect from order, default CVE
+- Init: No Composer dependencies (eliminate sokil/php-isocodes)
+- Init: Settings in WooCommerce → Payments (not separate admin menu)
+- Init: purchaseRequest without `purchaseDate` (deprecated by SISP)
+- Init: Use `payment_complete()` for order completion
+- Init: Callback via `woocommerce_api_{gateway_id}`
+- Init: Build per PRD milestone order (bootstrap → gateway → fingerprint → redirect → callback → blocks → logging → tests)
+- 01-01: Filter-based gateway registration only (no direct instantiation)
+- 01-01: Unconditional admin notices loading outside plugins_loaded
+- 01-01: Commented-out require stubs with phase annotations for future files
+- 01-01: process_payment() stub returns failure (safe default)
+- 02-01: Auth code sanitization via wp_unslash() only (preserve % + / =)
+- 02-01: Sandbox-first default for vbv2_url (test URL by default)
+- 02-02: Static currency map (no Composer) with 6 currencies: CVE, EUR, USD, AOA, BRL, GBP
+- 02-02: Triple fallback chain: order currency → currency_default setting → hardcoded CVE ('132')
+- 02-02: String return type for SISP protocol compatibility
+- 03-01: Standalone functions (not class methods) for formatting helpers
+- 03-01: absint(round()) for amount normalization (PHP default rounding)
+- 03-01: Optional fingerprint fields appended only when non-empty (Yoda conditions)
+- 03-02: Static builder methods — no instance state needed
+- 03-02: UUID4 for attempt_id via wp_generate_uuid4()
+- 03-02: Transaction code hardcoded to '1' (Authorization)
+- 03-02: addrMatch compares address_1, city, postcode, country (not state)
+- 03-02: Phone block reuses billing phone for both work and mobile
+- 04-01: Config validation checks pos_id, pos_auth_code, vbv2_url before attempt building
+- 04-01: wc_add_notice() for user-facing errors (not wp_die or exceptions)
+- 04-01: Dual query args on redirect URL (order ID + order key for security)
+- 04-01: parse_request with URI fallback for rewrite rule edge cases
+- 04-01: Placeholder handler for form rendering (deferred to 04-02)
+- 04-02: posAuthCode sent raw in POST form (not hashed — SISP expects raw value)
+- 04-02: Standalone HTML document with exit() to bypass WordPress theming
+- 04-02: Order key validation prevents unauthorized payment form access
+- 04-02: Gateway null guard renders error if Vinti4 gateway unavailable
+- 05-01: Response fingerprint uses same sha512_base64() primitive and absint()*1000 pattern as request fingerprint
+- 05-01: Success message types hardcoded as strict array: 8, 10, M, P
+- 05-02: Idempotency via _vinti4_callback_processed order meta, set before every redirect
+- 05-02: Tasks 1+2 merged (helper refactored inline during initial file creation)
+- 05-02: payment_complete() is the ONLY order completion mechanism — no manual stock/cart ops
+- 05-03: Minimal gateway handle_callback() — one-liner delegating to Vinti4_Callback_Handler::handle()
+- 05-03: Include order preserves dependency chain in vinti4_init()
+- 06-01: Plain JS IIFE pattern — no build step needed for block registration
+- 06-01: canMakePayment always returns true — availability controlled server-side by is_active()
+- 06-01: Block registration hook outside vinti4_init() at top level (same pattern as gateway filter)
+- 06-01: Settings read from same woocommerce_vinti4_settings option as gateway class
 
 ### Pending Todos
 
@@ -56,21 +99,10 @@ None.
 
 ### Blockers/Concerns
 
-- Live checkout finding remains open until Phase 9-02/09-03 confirm the browser request no longer triggers `languageMessages é obrigatório para o funcionamento do Middleware`.
-- Admin diagnostics access issue remains in the sandbox for the `Vinti4 Tests` page; compatibility warning regression is resolved, but panel access should be rechecked in the target admin environment.
-- P1 callback fingerprint validation is fragile because the handler sanitizes incoming callback values before recomputing the fingerprint; raw callback values must be preserved for protocol hashing.
-- P1 amount handling is unsafe for the currencies currently exposed in settings: whole-integer normalization may only be valid for CVE-style flows, not EUR/USD.
-- P1 certification/testing coverage is still incomplete beyond the new request-shape checks; success-path callback and `process_payment()` regression tests remain to be added.
-- P2 production polish remains incomplete: stray `nul` file, stray `readme..md`, no `readme.txt` in plugin root, textdomain loader commented out, and mojibake/encoding issues in docs/comments.
-
-### Audit Context
-
-- Structural PRD alignment is mostly in place: guarded WooCommerce bootstrap, class-based gateway registration, unique `merchantRef`/`merchantSession`, centralized request and fingerprint builders, WC-API callback hook, idempotency flag, block integration class, and safe uninstall behavior.
-- The main remaining blocker is not the overall plugin architecture; it is the actual SISP request/response wire-shape and the reliability of protocol validation.
-- Recommended execution order: fix the live checkout blocker and WooCommerce compatibility first, retest in WordPress, then address callback hardening, currency model correctness, missing verification coverage, and final packaging polish.
+None.
 
 ## Session Continuity
 
-Last session: 2026-04-17 07:52 UTC
-Stopped at: Completed 10-03-PLAN.md
+Last session: 2026-04-16
+Stopped at: Completed 06-01-PLAN.md (Phase 6 complete)
 Resume file: None
