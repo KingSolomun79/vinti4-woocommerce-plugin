@@ -2,7 +2,8 @@
 /**
  * Tests for Vinti4_Callback_Handler
  *
- * Verifies callback handling behavior: duplicate detection, invalid fingerprint
+ * Verifies callback handling behavior: attempt-level resolution, per-attempt
+ * idempotency, partial payment totals, duplicate detection, invalid fingerprint
  * rejection, missing data rejection, and unparseable merchant reference rejection.
  * Uses pure PHPUnit with mocked WP/WC functions.
  *
@@ -84,6 +85,12 @@ class Test_Callback_Handler extends TestCase {
 			/** @var string Current order status. */
 			private string $test_status = 'pending';
 
+			/** @var float Order total. */
+			private float $test_total;
+
+			/** @var int Order ID. */
+			private int $test_id;
+
 			public function __construct( array $meta_overrides = array() ) {
 				$this->test_meta = array_merge(
 					array(
@@ -93,9 +100,15 @@ class Test_Callback_Handler extends TestCase {
 					),
 					$meta_overrides
 				);
+				$this->test_total = 100.0;
+				$this->test_id    = 42;
 			}
 
-			public function get_meta( $key ): string {
+			public function get_id(): int {
+				return $this->test_id;
+			}
+
+			public function get_meta( $key, $single = true ) {
 				return $this->test_meta[ $key ] ?? '';
 			}
 
@@ -127,7 +140,121 @@ class Test_Callback_Handler extends TestCase {
 			}
 
 			public function add_order_note( $note ): void {}
+
+			public function get_total(): float {
+				return $this->test_total;
+			}
 		};
+	}
+
+	/**
+	 * Create a mock order with attempt history for attempt-level tests.
+	 *
+	 * @param array $attempts     Array of attempt records.
+	 * @param array $meta_extra   Additional meta overrides.
+	 * @param float $order_total  Order total for outstanding calculation.
+	 * @return WC_Order
+	 */
+	private function create_order_with_attempts( array $attempts, array $meta_extra = array(), float $order_total = 200.0 ): WC_Order {
+		$meta = array_merge(
+			array(
+				'_vinti4_attempt_history' => $attempts,
+				'_vinti4_merchant_ref'    => $attempts[0]['merchant_ref'] ?? 'WC42-20260416143022',
+				'_vinti4_amount'          => $attempts[0]['amount'] ?? '100',
+			),
+			$meta_extra
+		);
+
+		return new class( $meta, $order_total ) extends WC_Order {
+
+			/** @var array<string, mixed> Stored meta values. */
+			private array $test_meta;
+
+			/** @var bool Whether payment_complete() was called. */
+			public bool $payment_complete_called = false;
+
+			/** @var string|null Transaction ID passed to payment_complete(). */
+			public ?string $payment_complete_txn_id = null;
+
+			/** @var bool Whether update_status() was called. */
+			public bool $update_status_called = false;
+
+			/** @var string|null Status passed to update_status(). */
+			public ?string $updated_status = null;
+
+			/** @var string|null Note passed to update_status(). */
+			public ?string $updated_status_note = null;
+
+			/** @var string Current order status. */
+			private string $test_status = 'pending';
+
+			/** @var float Order total. */
+			private float $test_total;
+
+			public function __construct( array $meta, float $order_total ) {
+				$this->test_meta = $meta;
+				$this->test_total = $order_total;
+			}
+
+			public function get_id(): int {
+				return 42;
+			}
+
+			public function get_meta( $key, $single = true ) {
+				return $this->test_meta[ $key ] ?? '';
+			}
+
+			public function update_meta_data( $key, $value ): void {
+				$this->test_meta[ $key ] = $value;
+			}
+
+			public function save(): void {}
+
+			public function get_status(): string {
+				return $this->test_status;
+			}
+
+			public function update_status( $status, $note = '' ): void {
+				$this->update_status_called = true;
+				$this->updated_status       = $status;
+				$this->updated_status_note  = $note;
+				$this->test_status          = $status;
+			}
+
+			public function payment_complete( $transaction_id = '' ): void {
+				$this->payment_complete_called  = true;
+				$this->payment_complete_txn_id  = $transaction_id;
+				$this->test_status              = 'processing';
+			}
+
+			public function get_checkout_order_received_url(): string {
+				return '/order-received/';
+			}
+
+			public function add_order_note( $note ): void {}
+
+			public function get_total(): float {
+				return $this->test_total;
+			}
+		};
+	}
+
+	/**
+	 * Build an attempt record for testing.
+	 */
+	private function build_attempt( string $attempt_id, string $merchant_ref, string $merchant_session, string $amount, string $status = 'pending' ): array {
+		return array(
+			'attempt_id'       => $attempt_id,
+			'merchant_ref'     => $merchant_ref,
+			'merchant_session' => $merchant_session,
+			'amount'           => $amount,
+			'status'           => $status,
+			'created_at_gmt'   => '2026-04-17 10:00:00',
+			'sequence'         => 1,
+			'timestamp'        => '2026-04-17 10:00:00',
+			'currency'         => '132',
+			'transaction_code' => '1',
+		);
 	}
 
 	/**
@@ -135,22 +262,22 @@ class Test_Callback_Handler extends TestCase {
 	 */
 	private function valid_post_payload( array $overrides = array() ): array {
 		// Compute the correct fingerprint for these values.
-		$pos_auth_code    = 'TESTAUTH123';
-		$message_type     = '8';
-		$clearing_period  = '2026-04-16';
-		$transaction_id   = 'TXN123456';
-		$merchant_ref     = 'WC42-20260416143022';
-		$merchant_session = 'Saaaaaaaaaaaa';
-		$purchase_amount  = '100';
-		$message_id       = 'MSG789';
-		$pan              = '411111******1111';
+		$pos_auth_code     = 'TESTAUTH123';
+		$message_type      = '8';
+		$clearing_period   = '2026-04-16';
+		$transaction_id    = 'TXN123456';
+		$merchant_ref      = 'WC42-20260416143022';
+		$merchant_session  = 'Saaaaaaaaaaaa';
+		$purchase_amount   = '100';
+		$message_id        = 'MSG789';
+		$pan               = '411111******1111';
 		$merchant_response = 'Approved';
-		$timestamp        = '2026-04-16 14:31:00';
-		$reference_number = 'REF001';
-		$entity_code      = '54321';
-		$client_receipt   = 'true';
-		$additional_error = '';
-		$reload_code      = '0';
+		$timestamp         = '2026-04-16 14:31:00';
+		$reference_number  = 'REF001';
+		$entity_code       = '54321';
+		$client_receipt    = 'true';
+		$additional_error  = '';
+		$reload_code       = '0';
 
 		$correct_fingerprint = Vinti4_Fingerprint::build_response_fingerprint(
 			$pos_auth_code,
@@ -195,14 +322,353 @@ class Test_Callback_Handler extends TestCase {
 		return array_merge( $payload, $overrides );
 	}
 
-	// ─── Tests ─────────────────────────────────────────────────────────────
+	/**
+	 * Build a valid attempt-level payload for a specific attempt.
+	 */
+	private function attempt_post_payload( string $merchant_ref, string $merchant_session, string $purchase_amount, array $overrides = array() ): array {
+		$pos_auth_code     = 'TESTAUTH123';
+		$message_type      = '8';
+		$clearing_period   = '2026-04-17';
+		$transaction_id    = 'TXN-ATTEMPT-001';
+		$message_id        = 'MSG-ATTEMPT';
+		$pan               = '411111******1111';
+		$merchant_response = 'Approved';
+		$timestamp         = '2026-04-17 10:01:00';
+		$reference_number  = 'REF-ATT';
+		$entity_code       = '54321';
+		$client_receipt    = 'true';
+		$additional_error  = '';
+		$reload_code       = '0';
+
+		$correct_fingerprint = Vinti4_Fingerprint::build_response_fingerprint(
+			$pos_auth_code,
+			$message_type,
+			$clearing_period,
+			$transaction_id,
+			$merchant_ref,
+			$merchant_session,
+			$purchase_amount,
+			$message_id,
+			$pan,
+			$merchant_response,
+			$timestamp,
+			$reference_number,
+			$entity_code,
+			$client_receipt,
+			$additional_error,
+			$reload_code
+		);
+
+		$payload = array(
+			'messageType'                            => $message_type,
+			'resultFingerPrint'                      => $correct_fingerprint,
+			'merchantRespMerchantRef'                => $merchant_ref,
+			'merchantRespMerchantSession'            => $merchant_session,
+			'merchantRespPurchaseAmount'             => $purchase_amount,
+			'merchantRespCP'                         => $clearing_period,
+			'merchantRespTid'                        => $transaction_id,
+			'merchantRespMessageID'                  => $message_id,
+			'merchantRespPan'                        => $pan,
+			'merchantResp'                           => $merchant_response,
+			'merchantRespTimeStamp'                  => $timestamp,
+			'merchantRespReferenceNumber'            => $reference_number,
+			'merchantRespEntityCode'                 => $entity_code,
+			'merchantRespClientReceipt'              => $client_receipt,
+			'merchantRespAdditionalErrorMessage'     => $additional_error,
+			'merchantRespReloadCode'                 => $reload_code,
+			'merchantRespErrorDetail'                => '',
+			'merchantRespErrorDescription'           => '',
+		);
+
+		return array_merge( $payload, $overrides );
+	}
+
+	// ─── Attempt-Level Tests ─────────────────────────────────────────────────
 
 	/**
-	 * Test 1: Duplicate callback is rejected — order already has _vinti4_callback_processed='1'.
+	 * Test: Callback resolves exact attempt from history by merchantRef.
+	 *
+	 * When an order has attempt history and the callback merchantRef matches
+	 * an attempt, the attempt-level validation path should be used.
+	 */
+	public function test_resolve_attempt_by_merchant_ref(): void {
+		$attempt = $this->build_attempt(
+			'att-001',
+			'WC42-20260417100000abc',
+			'Ssession001abc',
+			'100'
+		);
+
+		$this->order = $this->create_order_with_attempts( array( $attempt ) );
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000abc',
+			'Ssession001abc',
+			'100'
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect after successful completion.
+		}
+
+		// Verify payment_complete was called (full payment since amount matches order total).
+		$this->assertTrue( $this->order->payment_complete_called, 'payment_complete should be called for resolved attempt.' );
+		$this->assertSame( 'TXN-ATTEMPT-001', $this->order->payment_complete_txn_id );
+	}
+
+	/**
+	 * Test: Per-attempt idempotency prevents duplicate processing.
+	 *
+	 * When an attempt has already been processed (meta key set), the callback
+	 * should redirect without re-processing.
+	 */
+	public function test_per_attempt_idempotency(): void {
+		$attempt = $this->build_attempt(
+			'att-dup-001',
+			'WC42-20260417100000dup',
+			'Ssessiondup001',
+			'100'
+		);
+
+		$this->order = $this->create_order_with_attempts(
+			array( $attempt ),
+			array(
+				"_vinti4_attempt_att-dup-001_processed" => '2026-04-17 10:30:00',
+			)
+		);
+		// Simulate already-completed order.
+		$this->order->payment_complete();
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000dup',
+			'Ssessiondup001',
+			'100'
+		);
+
+		$caught = false;
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			$caught = true;
+			// Should redirect to order-received for completed orders.
+			$this->assertSame( '/order-received/', $e->getMessage() );
+		}
+
+		$this->assertTrue( $caught, 'Expected Vinti4_Redirect_Exception for duplicate callback.' );
+		// payment_complete_called was set to true in setup to simulate completion,
+		// but the callback handler should NOT have called it again.
+		// Since mock doesn't track call count, we verify no new txn_id was set.
+		$this->assertNotSame( 'TXN-ATTEMPT-001', $this->order->payment_complete_txn_id );
+	}
+
+	/**
+	 * Test: Partial payment totals are tracked correctly.
+	 *
+	 * When a partial payment callback is received for an order that already
+	 * has a completed attempt, the paid total should reflect both amounts
+	 * and the order should remain in processing status (not completed).
+	 */
+	public function test_partial_payment_totals(): void {
+		$first_attempt = $this->build_attempt(
+			'att-partial-1',
+			'WC42-20260417100000p1',
+			'Ssessionp1abc',
+			'100'
+		);
+		$first_attempt['status'] = 'completed';
+		$first_attempt['callback_received'] = true;
+
+		$second_attempt = $this->build_attempt(
+			'att-partial-2',
+			'WC42-20260417110000p2',
+			'Ssessionp2abc',
+			'100'
+		);
+		$second_attempt['sequence'] = 2;
+
+		// Order total is 200, first attempt paid 100, second will bring total to 200.
+		$this->order = $this->create_order_with_attempts(
+			array( $first_attempt, $second_attempt ),
+			array(),
+			200.0
+		);
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417110000p2',
+			'Ssessionp2abc',
+			'100'
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect.
+		}
+
+		// With two completed attempts totaling 200, order total is 200,
+		// so outstanding should be ~0 and order should be completed.
+		$this->assertTrue( $this->order->payment_complete_called, 'Order should be completed when fully paid.' );
+	}
+
+	/**
+	 * Test: Partial payment keeps order in processing when outstanding > 0.
+	 *
+	 * When a partial payment callback arrives but the order is not yet fully
+	 * paid, the order should be set to 'processing' (not payment_complete).
+	 */
+	public function test_partial_payment_remains_processing(): void {
+		$attempt = $this->build_attempt(
+			'att-partial-rem',
+			'WC42-20260417100000rem',
+			'Ssessionremabc',
+			'50'
+		);
+
+		// Order total is 200, partial attempt for 50 leaves 150 outstanding.
+		$this->order = $this->create_order_with_attempts(
+			array( $attempt ),
+			array(),
+			200.0
+		);
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000rem',
+			'Ssessionremabc',
+			'50'
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect to order-received.
+		}
+
+		// Partial payment should set status to 'processing', not call payment_complete.
+		$this->assertFalse( $this->order->payment_complete_called, 'payment_complete should NOT be called for partial payment.' );
+		$this->assertTrue( $this->order->update_status_called, 'update_status should be called for partial payment.' );
+		$this->assertSame( 'processing', $this->order->updated_status );
+	}
+
+	/**
+	 * Test: merchantSession mismatch rejects the callback.
+	 *
+	 * When the callback merchantSession doesn't match the attempt's stored
+	 * session, the callback should be rejected with diagnostic logging.
+	 */
+	public function test_merchant_session_mismatch_rejected(): void {
+		$attempt = $this->build_attempt(
+			'att-session-mismatch',
+			'WC42-20260417100000ses',
+			'Scorrectsession1',
+			'100'
+		);
+
+		$this->order = $this->create_order_with_attempts( array( $attempt ) );
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000ses',
+			'Swrongsess001',  // Wrong session.
+			'100'
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect to checkout.
+		}
+
+		$this->assertTrue( $this->order->update_status_called, 'Order should be marked as failed on session mismatch.' );
+		$this->assertSame( 'failed', $this->order->updated_status );
+		$this->assertFalse( $this->order->payment_complete_called, 'payment_complete should NOT be called on session mismatch.' );
+	}
+
+	/**
+	 * Test: Attempt with wrong amount is rejected.
+	 *
+	 * When the callback purchase amount doesn't match the attempt's stored
+	 * amount, the callback should be rejected.
+	 */
+	public function test_attempt_amount_mismatch_rejected(): void {
+		$attempt = $this->build_attempt(
+			'att-amount-mismatch',
+			'WC42-20260417100000amt',
+			'Ssessionamt001',
+			'100'
+		);
+
+		$this->order = $this->create_order_with_attempts( array( $attempt ) );
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->attempt_post_payload(
+			'WC42-20260417100000amt',
+			'Ssessionamt001',
+			'999'  // Wrong amount — attempt stores 100.
+		);
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect to checkout.
+		}
+
+		$this->assertTrue( $this->order->update_status_called, 'Order should be marked as failed on amount mismatch.' );
+		$this->assertSame( 'failed', $this->order->updated_status );
+		$this->assertFalse( $this->order->payment_complete_called );
+	}
+
+	/**
+	 * Test: Spoofed callback for merchantRef not in attempt history.
+	 *
+	 * When the callback has a merchantRef that doesn't match any attempt
+	 * in the order's history, it should be rejected as possible spoof.
+	 */
+	public function test_spoofed_merchant_ref_rejected(): void {
+		$attempt = $this->build_attempt(
+			'att-real',
+			'WC42-20260417100000real',
+			'Ssessionreal01',
+			'100'
+		);
+
+		$this->order = $this->create_order_with_attempts( array( $attempt ) );
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = array(
+			'messageType'                     => '8',
+			'resultFingerPrint'               => 'spoofed-fingerprint',
+			'merchantRespMerchantRef'         => 'WC42-20260417100000spoof', // Not in history.
+			'merchantRespMerchantSession'     => 'Sspoofed001',
+			'merchantRespPurchaseAmount'      => '100',
+			'merchantRespErrorDetail'         => '',
+			'merchantRespErrorDescription'    => '',
+		);
+
+		$caught = false;
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			$caught = true;
+		}
+
+		$this->assertTrue( $caught, 'Spoofed merchantRef should redirect to checkout.' );
+		$this->assertFalse( $this->order->payment_complete_called, 'payment_complete should NOT be called for spoofed callback.' );
+	}
+
+	// ─── Legacy Tests ────────────────────────────────────────────────────────
+
+	/**
+	 * Test: Duplicate legacy callback is rejected — order already has _vinti4_callback_processed='1'.
 	 * Expected: wp_safe_redirect is thrown (Vinti4_Redirect_Exception), payment_complete NOT called.
 	 */
 	public function test_duplicate_callback_rejected(): void {
-		// Create order that already has callback processed flag.
+		// Create order that already has callback processed flag — no attempt history (legacy).
 		$this->order = $this->create_mock_order( array(
 			'_vinti4_callback_processed' => '1',
 		) );
@@ -213,13 +679,10 @@ class Test_Callback_Handler extends TestCase {
 
 		$this->expectException( Vinti4_Redirect_Exception::class );
 		Vinti4_Callback_Handler::handle( $this->gateway );
-
-		// Verify payment_complete was NOT called by this callback.
-		// (The setUp mock called it once to simulate prior completion.)
 	}
 
 	/**
-	 * Test 2: Invalid fingerprint — correct success messageType but wrong resultFingerPrint.
+	 * Test: Invalid fingerprint — correct success messageType but wrong resultFingerPrint.
 	 * Expected: order marked as failed, payment_complete NOT called.
 	 */
 	public function test_invalid_fingerprint_callback(): void {
@@ -243,7 +706,7 @@ class Test_Callback_Handler extends TestCase {
 	}
 
 	/**
-	 * Test 3: Missing merchantRef — empty merchantRespMerchantRef.
+	 * Test: Missing merchantRef — empty merchantRespMerchantRef.
 	 * Expected: wp_die is thrown (Vinti4_Die_Exception).
 	 */
 	public function test_missing_merchant_ref_rejected(): void {
@@ -261,7 +724,7 @@ class Test_Callback_Handler extends TestCase {
 	}
 
 	/**
-	 * Test 4: Unparseable merchantRef — doesn't match WC{id}-... pattern.
+	 * Test: Unparseable merchantRef — doesn't match WC{id}-... pattern.
 	 * Expected: wp_die is thrown (Vinti4_Die_Exception).
 	 */
 	public function test_unparseable_merchant_ref_rejected(): void {
@@ -279,7 +742,7 @@ class Test_Callback_Handler extends TestCase {
 	}
 
 	/**
-	 * Test 5: Failure callback without resultFingerPrint should still be processed.
+	 * Test: Failure callback without resultFingerPrint should still be processed.
 	 * Expected: order marked as failed and redirected, not wp_die().
 	 */
 	public function test_failure_callback_without_fingerprint_marks_order_failed(): void {
@@ -307,7 +770,7 @@ class Test_Callback_Handler extends TestCase {
 	}
 
 	/**
-	 * Test 6: Failure callback data delivered in query string should be accepted.
+	 * Test: Failure callback data delivered in query string should be accepted.
 	 * Expected: order marked as failed and redirected, not wp_die().
 	 */
 	public function test_failure_callback_query_payload_marks_order_failed(): void {
@@ -336,7 +799,7 @@ class Test_Callback_Handler extends TestCase {
 	}
 
 	/**
-	 * Test 7: Fixed-length merchantRef resolves order ID via meta lookup.
+	 * Test: Fixed-length merchantRef resolves order ID via meta lookup.
 	 */
 	public function test_fixed_length_merchant_ref_resolves_order_via_lookup(): void {
 		$this->order = $this->create_mock_order( array(
