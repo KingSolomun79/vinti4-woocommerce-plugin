@@ -828,4 +828,99 @@ class Test_Callback_Handler extends TestCase {
 		$this->assertTrue( $this->order->update_status_called, 'Order should be marked as failed.' );
 		$this->assertSame( 'failed', $this->order->updated_status );
 	}
+
+	// ─── Backward Compatibility Tests ────────────────────────────────────────
+
+	/**
+	 * Test: Legacy callback flow for orders without attempt history.
+	 *
+	 * When an order has no _vinti4_attempt_history meta but has legacy
+	 * _vinti4_merchant_ref and _vinti4_amount meta, the callback should
+	 * be processed via the legacy path and the order should be marked
+	 * with _vinti4_is_legacy_order.
+	 */
+	public function test_legacy_callback_flow(): void {
+		$this->order = $this->create_mock_order( array(
+			'_vinti4_merchant_ref'       => 'WC42-20260416143022',
+			'_vinti4_amount'             => '100',
+			'_vinti4_callback_processed' => '',
+		) );
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->valid_post_payload();
+
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			// Expected redirect after success.
+		}
+
+		// Order should complete successfully via legacy path.
+		$this->assertTrue( $this->order->payment_complete_called, 'payment_complete should be called for legacy order.' );
+
+		// Order should be marked as legacy.
+		$this->assertTrue( $this->order->get_meta( '_vinti4_is_legacy_order' ), 'Order should be marked with _vinti4_is_legacy_order.' );
+	}
+
+	/**
+	 * Test: Legacy callback with invalid merchantRef is rejected.
+	 *
+	 * When a legacy order receives a callback with a non-matching
+	 * merchantRef, the callback should be rejected via the legacy path.
+	 */
+	public function test_legacy_callback_invalid_ref(): void {
+		$this->order = $this->create_mock_order( array(
+			'_vinti4_merchant_ref'       => 'WC42-STORED-REF',
+			'_vinti4_amount'             => '100',
+			'_vinti4_callback_processed' => '',
+		) );
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->valid_post_payload( array(
+			'merchantRespMerchantRef' => 'WC42-DIFFERENT-REF',
+		) );
+
+		$caught = false;
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			$caught = true;
+		}
+
+		$this->assertTrue( $caught, 'Legacy callback with invalid ref should redirect.' );
+		$this->assertFalse( $this->order->payment_complete_called, 'payment_complete should NOT be called for invalid ref.' );
+	}
+
+	/**
+	 * Test: Legacy callback idempotency prevents duplicate processing.
+	 *
+	 * When a legacy order already has _vinti4_callback_processed set,
+	 * the duplicate callback should be rejected.
+	 */
+	public function test_legacy_callback_idempotency(): void {
+		$this->order = $this->create_mock_order( array(
+			'_vinti4_merchant_ref'       => 'WC42-20260416143022',
+			'_vinti4_amount'             => '100',
+			'_vinti4_callback_processed' => '1',
+		) );
+		// Simulate already-processed order.
+		$this->order->payment_complete();
+		$GLOBALS['mock_wc_order'] = $this->order;
+
+		$_POST = $this->valid_post_payload();
+
+		$caught = false;
+		try {
+			Vinti4_Callback_Handler::handle( $this->gateway );
+		} catch ( Vinti4_Redirect_Exception $e ) {
+			$caught = true;
+			// Should redirect to order-received for completed orders.
+			$this->assertSame( '/order-received/', $e->getMessage() );
+		}
+
+		$this->assertTrue( $caught, 'Duplicate legacy callback should redirect.' );
+
+		// Verify no new transaction ID was set (payment_complete not called again by handler).
+		$this->assertNotSame( 'TXN123456', $this->order->payment_complete_txn_id );
+	}
 }
