@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Milestone v1.1 definition complete — roadmap ready for Phase 9 planning
+**Current focus:** Phase 9 attempt foundation complete — ready for Phase 10 compatibility flow work
 
 ## Current Position
 
 Phase: 9 of 11 (Attempt Foundation and Persistence)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-04-17 — Completed 09-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-04-17 — Completed 09-02-PLAN.md
 
-Progress: █████████░ 91%
+Progress: █████████░ 96%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: ~4 min
-- Total execution time: ~42 min
+- Total execution time: ~48 min
 
 **By Phase:**
 
@@ -35,8 +35,8 @@ Progress: █████████░ 91%
 | 06-checkout-block-support | 1 | ~1 min | ~1 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-02 (~2 min), 05-03 (~3 min), 06-01 (~1 min)
-- Trend: Accelerating — block support was straightforward
+- Last 5 plans: 06-01 (~1 min), 07-01 (~5 min), 07-02 (~5 min), 09-01 (~3 min), 09-02 (~6 min)
+- Trend: Stable — attempt persistence/factory migration completed with expected complexity
 
 *Updated after each plan completion*
 
@@ -95,10 +95,13 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 09-01: _vinti4_attempt_history is the canonical append-only persistence key for attempt history
 - 09-01: Attempt ordering is deterministic oldest-first using created_at_gmt and sequence tie-break
 - 09-01: Legacy _vinti4_* keys are compatibility projection outputs, not the history source of truth
+- 09-02: Vinti4_Attempt_Factory is the canonical attempt creation service for checkout and future admin flows
+- 09-02: Request builder consumes explicit attempt amount context for fingerprint generation
+- 09-02: process_payment appends attempts via Vinti4_Attempt_Store and never overwrites history directly
 
 ### Pending Todos
 
-- PHP CLI is unavailable in the current execution environment; lint and PHPUnit verification for 09-01 must be rerun in a PHP-enabled environment.
+- PHP CLI is unavailable in the current execution environment; lint and PHPUnit verification for 09-01/09-02 must be rerun in a PHP-enabled environment.
 
 ### Blockers/Concerns
 
@@ -106,6 +109,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-17 14:34 UTC
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-04-17 14:42 UTC
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
