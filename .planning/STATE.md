@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 11 planned — callback reconciliation and compatibility verification
+**Current focus:** Phase 11 in progress — callback reconciliation plan 1 complete
 
 ## Current Position
 
-Phase: 11 of 11 (Callback Reconciliation and Compatibility Verification) — Planned
-Plan: 11-01, 11-02
-Status: Phase 9 complete and verified; Phase 11 plans created
-Last activity: 2026-04-17 — Phase 11 plans created (2 plans in 2 waves)
+Phase: 11 of 11 (Callback Reconciliation and Compatibility Verification) — In Progress
+Plan: 11-01 complete, 11-02 next
+Status: Plan 11-01 executed — attempt-level callback reconciliation complete
+Last activity: 2026-04-17 — Completed 11-01 (callback reconciliation)
 
-Progress: ████████░░ 96%
+Progress: ████████▓░ 97%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Total plans created: 14 (including Phase 11)
 - Average duration: ~4 min
-- Total execution time: ~48 min
+- Total execution time: ~52 min
 
 **By Phase:**
 
@@ -34,10 +34,11 @@ Progress: ████████░░ 96%
 | 04-payment-redirect-flow | 2 | ~9 min | ~4.5 min |
 | 05-callback-idempotency | 3 | ~8 min | ~2.7 min |
 | 06-checkout-block-support | 1 | ~1 min | ~1 min |
+| 11-callback-reconciliation | 1/2 | ~4 min | ~4 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-01 (~1 min), 07-01 (~5 min), 07-02 (~5 min), 09-01 (~3 min), 09-02 (~6 min)
-- Trend: Stable — attempt persistence/factory migration completed with expected complexity
+- Last 5 plans: 07-01 (~5 min), 07-02 (~5 min), 09-01 (~3 min), 09-02 (~6 min), 11-01 (~4 min)
+- Trend: Stable — callback reconciliation completed with expected complexity
 
 *Updated after each plan completion*
 
@@ -103,14 +104,16 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 11-01: Idempotency is enforced per attempt via "_vinti4_attempt_{attempt_id}_processed" meta keys
 - 11-01: Partial payment callbacks update paid/outstanding totals accurately across multiple attempts
 - 11-01: Legacy callback path preserved for orders without attempt history
+- 11-01: Partial payments keep order in processing status; payment_complete() only when outstanding <= 0.01
+- 11-01: Attempt-first resolution with legacy fallback when no attempt history exists
 - 11-02: Logging includes attempt-scoped context (attempt_id, merchantRef, amount, outcome)
 - 11-02: Validation failures are distinguishable by failure_type in logs
 - 11-02: Backward compatibility verified via legacy callback flow tests
 
 ### Pending Todos
 
-- PHP CLI is unavailable in the current execution environment; lint and PHPUnit verification for 09-01/09-02 must be rerun in a PHP-enabled environment.
-- Phase 10 (Admin Partial Request Flow) is not started and must be completed before Phase 11 execution.
+- PHP CLI is unavailable in the current execution environment; lint and PHPUnit verification for 09-01/09-02/11-01 must be rerun in a PHP-enabled environment.
+- Phase 10 (Admin Partial Request Flow) is not started.
 
 ### Blockers/Concerns
 
@@ -118,6 +121,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-17 17:36 UTC
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-04-17 21:51 UTC
+Stopped at: Completed 11-01-SUMMARY.md
 Resume file: None
