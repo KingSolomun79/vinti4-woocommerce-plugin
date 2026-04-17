@@ -99,4 +99,16 @@ class Test_Request_Builder extends TestCase {
 
 		$this->assertSame( 'pt', $attempt['languageMessages'] );
 	}
+
+	public function test_build_payment_attempt_normalizes_relative_callback_url_to_absolute_home_url(): void {
+		$GLOBALS['mock_wc_instance'] = new class {
+			public function api_request_url( $endpoint ) {
+				return '/wc-api/' . $endpoint . '/';
+			}
+		};
+
+		$attempt = Vinti4_Request_Builder::build_payment_attempt( $this->create_order(), $this->create_gateway( 'pt' ) );
+
+		$this->assertSame( 'http://example.com/wc-api/vinti4/', $attempt['urlMerchantResponse'] );
+	}
 }

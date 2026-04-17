@@ -232,15 +232,61 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	public function get_url_merchant_response(): string {
+		$fallback_url = add_query_arg( 'wc-api', $this->id, home_url( '/' ) );
+
 		if ( function_exists( 'WC' ) ) {
 			$woocommerce = WC();
 
 			if ( is_object( $woocommerce ) && method_exists( $woocommerce, 'api_request_url' ) ) {
-				return $woocommerce->api_request_url( $this->id );
+				$api_url = $this->normalize_callback_url( (string) $woocommerce->api_request_url( $this->id ) );
+
+				if ( '' !== $api_url ) {
+					return $api_url;
+				}
 			}
 		}
 
-		return add_query_arg( 'wc-api', $this->id, home_url( '/' ) );
+		return $fallback_url;
+	}
+
+	/**
+	 * Normalize callback URL values to an absolute merchant URL.
+	 *
+	 * @param string $url Callback URL candidate.
+	 * @return string
+	 */
+	private function normalize_callback_url( string $url ): string {
+		$trimmed_url = trim( $url );
+
+		if ( '' === $trimmed_url ) {
+			return '';
+		}
+
+		$parts = parse_url( $trimmed_url );
+
+		if ( false === $parts ) {
+			return '';
+		}
+
+		if ( ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
+			return $trimmed_url;
+		}
+
+		if ( 0 === strpos( $trimmed_url, '//' ) ) {
+			$home_scheme = parse_url( home_url( '/' ), PHP_URL_SCHEME );
+
+			if ( ! is_string( $home_scheme ) || '' === $home_scheme ) {
+				$home_scheme = 'https';
+			}
+
+			return $home_scheme . ':' . $trimmed_url;
+		}
+
+		if ( 0 !== strpos( $trimmed_url, '/' ) ) {
+			$trimmed_url = '/' . $trimmed_url;
+		}
+
+		return home_url( $trimmed_url );
 	}
 
 	/**
