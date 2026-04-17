@@ -382,6 +382,7 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 		$order->update_meta_data( '_vinti4_purchase_request_b64', $attempt['purchase_request_b64'] );
 		$order->update_meta_data( '_vinti4_fingerprint', $attempt['FingerPrint'] );
 		$order->update_meta_data( '_vinti4_fingerprint_version', $attempt['FingerPrintVersion'] );
+		$order->update_meta_data( '_vinti4_callback_processed', '' );
 		$order->save();
 
 		// Build redirect URL to the Vinti4 payment page.
