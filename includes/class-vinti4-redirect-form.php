@@ -22,58 +22,6 @@ if ( class_exists( 'Vinti4_Redirect_Form' ) ) {
 class Vinti4_Redirect_Form {
 
 	/**
-	 * Normalize callback URL values to an absolute merchant URL.
-	 *
-	 * This keeps older orders (saved before callback normalization) working by
-	 * converting legacy relative callback paths into absolute URLs at render time.
-	 *
-	 * @param string $url Callback URL candidate from order meta.
-	 * @return string
-	 */
-	private static function normalize_merchant_response_url( string $url ): string {
-		$trimmed_url = trim( $url );
-
-		if ( '' === $trimmed_url ) {
-			return '';
-		}
-
-		$parts = parse_url( $trimmed_url );
-
-		if ( false === $parts ) {
-			return '';
-		}
-
-		if ( ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
-			return $trimmed_url;
-		}
-
-		if ( 0 === strpos( $trimmed_url, '//' ) ) {
-			$home_scheme = parse_url( home_url( '/' ), PHP_URL_SCHEME );
-
-			if ( ! is_string( $home_scheme ) || '' === $home_scheme ) {
-				$home_scheme = 'https';
-			}
-
-			return $home_scheme . ':' . $trimmed_url;
-		}
-
-		if ( 0 !== strpos( $trimmed_url, '/' ) ) {
-			$trimmed_url = '/' . $trimmed_url;
-		}
-
-		return home_url( $trimmed_url );
-	}
-
-	/**
-	 * Determine whether redirect rendering is running under PHPUnit.
-	 *
-	 * @return bool
-	 */
-	private static function is_test_environment(): bool {
-		return defined( 'VINTI4_PHPUNIT' ) && VINTI4_PHPUNIT;
-	}
-
-	/**
 	 * Render the payment redirect page.
 	 *
 	 * Validates the order/key query parameters, loads attempt meta stored
@@ -112,33 +60,17 @@ class Vinti4_Redirect_Form {
 		}
 
 		// 4. Read attempt meta from the order.
-		$merchant_ref         = $order->get_meta( '_vinti4_merchant_ref' );
-		$merchant_session     = $order->get_meta( '_vinti4_merchant_session' );
-		$transaction_code     = $order->get_meta( '_vinti4_transaction_code' );
-		$amount               = $order->get_meta( '_vinti4_amount' );
-		$currency             = $order->get_meta( '_vinti4_currency' );
-		$timestamp            = $order->get_meta( '_vinti4_timestamp' );
-		$language_messages    = $order->get_meta( '_vinti4_language_messages' );
-		$url_merchant_response = $order->get_meta( '_vinti4_url_merchant_response' );
-		$is_3dsec             = $order->get_meta( '_vinti4_is_3dsec' );
-		$fingerprint          = $order->get_meta( '_vinti4_fingerprint' );
-		$fingerprint_version  = $order->get_meta( '_vinti4_fingerprint_version' );
+		$merchant_ref        = $order->get_meta( '_vinti4_merchant_ref' );
+		$merchant_session    = $order->get_meta( '_vinti4_merchant_session' );
+		$transaction_code    = $order->get_meta( '_vinti4_transaction_code' );
+		$amount              = $order->get_meta( '_vinti4_amount' );
+		$currency            = $order->get_meta( '_vinti4_currency' );
+		$timestamp           = $order->get_meta( '_vinti4_timestamp' );
+		$fingerprint         = $order->get_meta( '_vinti4_fingerprint' );
+		$fingerprint_version = $order->get_meta( '_vinti4_fingerprint_version' );
 		$purchase_request_b64 = $order->get_meta( '_vinti4_purchase_request_b64' );
 
-		if (
-			empty( $merchant_ref )
-			|| empty( $merchant_session )
-			|| empty( $transaction_code )
-			|| empty( $amount )
-			|| empty( $currency )
-			|| empty( $timestamp )
-			|| empty( $language_messages )
-			|| empty( $url_merchant_response )
-			|| empty( $is_3dsec )
-			|| empty( $fingerprint )
-			|| empty( $fingerprint_version )
-			|| empty( $purchase_request_b64 )
-		) {
+		if ( empty( $merchant_ref ) ) {
 			wp_die(
 				esc_html__( 'Payment data not found. Please try again.', 'vinti4' ),
 				esc_html__( 'Payment Error', 'vinti4' ),
@@ -158,25 +90,26 @@ class Vinti4_Redirect_Form {
 			);
 		}
 
-		$url_merchant_response = self::normalize_merchant_response_url( (string) $url_merchant_response );
-
-		if ( '' === $url_merchant_response ) {
-			wp_die(
-				esc_html__( 'Invalid callback URL for payment response.', 'vinti4' ),
-				esc_html__( 'Payment Error', 'vinti4' ),
-				array( 'response' => 500 )
-			);
+		if ( '' === (string) $fingerprint_version ) {
+			$fingerprint_version = '1';
 		}
 
-		// 6. Build the SISP URL.
-		$sisp_url = esc_url( add_query_arg(
-			array(
-				'FingerPrint'        => $fingerprint,
-				'TimeStamp'          => $timestamp,
-				'FingerPrintVersion' => $fingerprint_version,
-			),
-			$gateway->vbv2_url
-		) );
+		// 6. Build the SISP URL with explicit RFC3986 query encoding.
+		// This guarantees '+' in Base64 fingerprint is sent as '%2B' and
+		// never interpreted as a space by x-www-form-urlencoded parsers.
+		$base_sisp_url = trim( (string) $gateway->vbv2_url );
+		$sisp_query    = 'FingerPrint=' . rawurlencode( (string) $fingerprint )
+			. '&TimeStamp=' . rawurlencode( (string) $timestamp )
+			. '&FingerPrintVersion=' . rawurlencode( (string) $fingerprint_version );
+
+		if ( false === strpos( $base_sisp_url, '?' ) ) {
+			$sisp_url = $base_sisp_url . '?' . $sisp_query;
+		} else {
+			$needs_separator = ! str_ends_with( $base_sisp_url, '?' ) && ! str_ends_with( $base_sisp_url, '&' );
+			$sisp_url        = $base_sisp_url . ( $needs_separator ? '&' : '' ) . $sisp_query;
+		}
+
+		$sisp_url = esc_url( $sisp_url );
 
 		// Send appropriate headers.
 		status_header( 200 );
@@ -205,6 +138,7 @@ class Vinti4_Redirect_Form {
 
 		// Required fields from gateway settings.
 		echo '<input type="hidden" name="posID" value="' . esc_attr( $gateway->pos_id ) . '">';
+		echo '<input type="hidden" name="posAuthCode" value="' . esc_attr( $gateway->pos_auth_code ) . '">';
 
 		// Required fields from order meta.
 		echo '<input type="hidden" name="merchantRef" value="' . esc_attr( $merchant_ref ) . '">';
@@ -212,10 +146,12 @@ class Vinti4_Redirect_Form {
 		echo '<input type="hidden" name="amount" value="' . esc_attr( $amount ) . '">';
 		echo '<input type="hidden" name="currency" value="' . esc_attr( $currency ) . '">';
 		echo '<input type="hidden" name="transactionCode" value="' . esc_attr( $transaction_code ) . '">';
+		echo '<input type="hidden" name="fingerprint" value="' . esc_attr( $fingerprint ) . '">';
+		echo '<input type="hidden" name="timestamp" value="' . esc_attr( $timestamp ) . '">';
 		echo '<input type="hidden" name="purchaseRequest" value="' . esc_attr( $purchase_request_b64 ) . '">';
-		echo '<input type="hidden" name="languageMessages" value="' . esc_attr( $language_messages ) . '">';
-		echo '<input type="hidden" name="urlMerchantResponse" value="' . esc_attr( $url_merchant_response ) . '">';
-		echo '<input type="hidden" name="is3DSec" value="' . esc_attr( $is_3dsec ) . '">';
+
+		// Language.
+		echo '<input type="hidden" name="lang" value="' . esc_attr( $gateway->language ) . '">';
 
 		// Application identifiers (from SISP spec).
 		echo '<input type="hidden" name="appCode" value="VINTI4WOO">';
@@ -228,11 +164,6 @@ class Vinti4_Redirect_Form {
 		// Auto-submit JavaScript.
 		echo '<script>document.getElementById("vinti4-payment-form").submit();</script>';
 		echo '</body></html>';
-
-		if ( self::is_test_environment() ) {
-			return;
-		}
-
 		exit;
 	}
 }
