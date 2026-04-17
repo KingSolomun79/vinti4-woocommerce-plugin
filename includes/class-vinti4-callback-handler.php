@@ -40,6 +40,111 @@ if ( class_exists( 'Vinti4_Callback_Handler' ) ) {
 class Vinti4_Callback_Handler {
 
 	/**
+	 * Log a callback outcome with attempt-scoped context.
+	 *
+	 * Provides structured logging for successful, failed, and duplicate
+	 * callback outcomes with attempt_id, merchant_ref, amount, and
+	 * transaction_id where applicable.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WC_Order $order       WooCommerce order.
+	 * @param array    $attempt     Attempt data from history.
+	 * @param string   $outcome     Outcome: 'success', 'failure', 'duplicate'.
+	 * @param string   $detail      Additional detail message.
+	 * @return void
+	 */
+	public static function log_callback_outcome( WC_Order $order, array $attempt, string $outcome, string $detail = '' ): void {
+		$attempt_id     = $attempt['attempt_id'] ?? 'unknown';
+		$merchant_ref   = $attempt['merchant_ref'] ?? '';
+		$amount         = $attempt['amount'] ?? '';
+		$transaction_id = $attempt['transaction_id'] ?? '';
+
+		$log_message = sprintf(
+			'Vinti4 callback: attempt=%s ref=%s amount=%s txn=%s outcome=%s',
+			$attempt_id,
+			$merchant_ref,
+			$amount,
+			$transaction_id,
+			$outcome
+		);
+
+		if ( '' !== $detail ) {
+			$log_message .= ' detail=' . $detail;
+		}
+
+		$level = match ( $outcome ) {
+			'success'   => 'info',
+			'failure'   => 'error',
+			'duplicate' => 'warning',
+			default     => 'debug',
+		};
+
+		Vinti4_Logger::log( $log_message, $level );
+	}
+
+	/**
+	 * Log a validation failure with attempt-scoped context and failure type.
+	 *
+	 * Called for each validation failure path to produce structured, distinguishable
+	 * log entries. The failure_type parameter differentiates between invalid_reference,
+	 * invalid_session, invalid_fingerprint, amount_mismatch, and duplicate_callback.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WC_Order $order        WooCommerce order.
+	 * @param array    $attempt      Attempt data from history (may be empty for some failures).
+	 * @param string   $failure_type One of: invalid_reference, invalid_session, invalid_fingerprint, amount_mismatch, duplicate_callback.
+	 * @param string   $reason       Specific reason for the failure.
+	 * @return void
+	 */
+	public static function log_validation_failure( WC_Order $order, array $attempt, string $failure_type, string $reason ): void {
+		$attempt_id   = $attempt['attempt_id'] ?? 'unknown';
+		$merchant_ref = $attempt['merchant_ref'] ?? '';
+
+		Vinti4_Logger::log(
+			sprintf(
+				'Vinti4 validation failure: type=%s attempt=%s ref=%s reason=%s',
+				$failure_type,
+				$attempt_id,
+				$merchant_ref,
+				$reason
+			),
+			'error'
+		);
+	}
+
+	/**
+	 * Log a duplicate callback detection with attempt-scoped context.
+	 *
+	 * Called when idempotency check detects that a callback for the same
+	 * attempt has already been processed.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WC_Order $order               WooCommerce order.
+	 * @param array    $attempt             Attempt data from history.
+	 * @param string   $processed_timestamp When the original callback was processed.
+	 * @return void
+	 */
+	public static function log_duplicate_callback( WC_Order $order, array $attempt, string $processed_timestamp ): void {
+		$attempt_id   = $attempt['attempt_id'] ?? 'unknown';
+		$merchant_ref = $attempt['merchant_ref'] ?? '';
+		$current_time = gmdate( 'Y-m-d H:i:s' );
+
+		Vinti4_Logger::log(
+			sprintf(
+				'Vinti4 duplicate callback: attempt=%s ref=%s originally_processed=%s duplicate_time=%s',
+				$attempt_id,
+				$merchant_ref,
+				$processed_timestamp,
+				$current_time
+			),
+			'warning'
+		);
+	}
+
+	/**
 	 * Handle a SISP payment callback.
 	 *
 	 * Called by the woocommerce_api_{gateway_id} action. Reads POST data from
@@ -66,7 +171,16 @@ class Vinti4_Callback_Handler {
 		// phpcs:ignore WordPress.Security.NonceVerification -- SISP is an external server, no nonce.
 		$request = array_merge( $_GET, $_POST );
 
-		Vinti4_Logger::log( 'Callback received from SISP.' );
+		// Extract merchant_ref early for entry logging.
+		$entry_merchant_ref = isset( $request['merchantRespMerchantRef'] ) ? sanitize_text_field( wp_unslash( $request['merchantRespMerchantRef'] ) ) : '';
+
+		Vinti4_Logger::log(
+			sprintf(
+				'Vinti4 callback received: merchant_ref=%s',
+				$entry_merchant_ref
+			),
+			'debug'
+		);
 
 		$message_type              = isset( $request['messageType'] ) ? sanitize_text_field( wp_unslash( $request['messageType'] ) ) : '';
 		$result_fingerprint        = isset( $request['resultFingerPrint'] ) ? sanitize_text_field( wp_unslash( $request['resultFingerPrint'] ) ) : '';
@@ -117,6 +231,15 @@ class Vinti4_Callback_Handler {
 			);
 			wp_die( esc_html__( 'Order not found.', 'vinti4' ), '', array( 'response' => 404 ) );
 		}
+
+		Vinti4_Logger::log(
+			sprintf(
+				'Vinti4 callback received: order=%d merchant_ref=%s',
+				$order_id,
+				$merchant_ref
+			),
+			'debug'
+		);
 
 		// Step 3 — Resolve attempt from history (v1.1+) or use legacy fallback.
 		$attempt = Vinti4_Attempt_Store::find_attempt_by_merchant_ref( $order, $merchant_ref );
@@ -183,13 +306,11 @@ class Vinti4_Callback_Handler {
 		}
 
 		// Attempt history exists but merchantRef not found — possible spoofed callback.
-		Vinti4_Logger::log(
-			sprintf(
-				'Callback failed: merchantRef %s not found in attempt history for order %d — possible spoofed callback.',
-				$merchant_ref,
-				$order_id
-			),
-			'error'
+		self::log_validation_failure(
+			$order,
+			array( 'attempt_id' => 'unknown', 'merchant_ref' => $merchant_ref ),
+			'invalid_reference',
+			sprintf( 'merchantRef %s not found in attempt history for order %d — possible spoofed callback', $merchant_ref, $order_id )
 		);
 		wp_safe_redirect( wc_get_checkout_url() );
 		exit;
@@ -239,14 +360,7 @@ class Vinti4_Callback_Handler {
 		$already_processed  = $order->get_meta( $processed_meta_key );
 
 		if ( $already_processed ) {
-			Vinti4_Logger::log(
-				sprintf(
-					'Callback duplicate: attempt %s already processed for order %d.',
-					$attempt_id,
-					$order->get_id()
-				),
-				'notice'
-			);
+			self::log_duplicate_callback( $order, $attempt, (string) $already_processed );
 			if ( in_array( $order->get_status(), array( 'processing', 'completed' ), true ) ) {
 				wp_safe_redirect( $order->get_checkout_order_received_url() );
 				exit;
@@ -258,14 +372,11 @@ class Vinti4_Callback_Handler {
 		// Validate merchantSession matches attempt.
 		$stored_session = $attempt['merchant_session'] ?? '';
 		if ( $stored_session !== $merchant_session ) {
-			Vinti4_Logger::log(
-				sprintf(
-					'Callback validation failed for attempt %s: merchantSession mismatch. Expected: %s, Got: %s.',
-					$attempt_id,
-					$stored_session,
-					$merchant_session
-				),
-				'error'
+			self::log_validation_failure(
+				$order,
+				$attempt,
+				'invalid_session',
+				sprintf( 'Expected: %s, Got: %s', $stored_session, $merchant_session )
 			);
 			Vinti4_Attempt_Store::mark_attempt_failed( $order, $attempt_id, 'merchantSession mismatch' );
 			$order->update_status( 'failed', __( 'Vinti4 callback session validation failed.', 'vinti4' ) );
@@ -297,14 +408,11 @@ class Vinti4_Callback_Handler {
 			);
 
 			if ( $expected_fingerprint !== $result_fingerprint ) {
-				Vinti4_Logger::log(
-					sprintf(
-						'Callback validation failed for attempt %s: fingerprint mismatch. merchantRef: %s, messageType: %s.',
-						$attempt_id,
-						$merchant_ref,
-						$message_type
-					),
-					'error'
+				self::log_validation_failure(
+					$order,
+					$attempt,
+					'invalid_fingerprint',
+					sprintf( 'messageType: %s', $message_type )
 				);
 				Vinti4_Attempt_Store::mark_attempt_failed( $order, $attempt_id, 'fingerprint mismatch' );
 				$order->update_status( 'failed', __( 'Vinti4 fingerprint validation failed.', 'vinti4' ) );
@@ -316,14 +424,11 @@ class Vinti4_Callback_Handler {
 			$response_amount = (int) $purchase_amount;
 
 			if ( $stored_amount !== $response_amount ) {
-				Vinti4_Logger::log(
-					sprintf(
-						'Callback validation failed for attempt %s: amount mismatch. Attempt amount: %d, Response amount: %d.',
-						$attempt_id,
-						$stored_amount,
-						$response_amount
-					),
-					'error'
+				self::log_validation_failure(
+					$order,
+					$attempt,
+					'amount_mismatch',
+					sprintf( 'Attempt amount: %d, Response amount: %d', $stored_amount, $response_amount )
 				);
 				Vinti4_Attempt_Store::mark_attempt_failed( $order, $attempt_id, 'amount mismatch' );
 				$order->update_status( 'failed', __( 'Vinti4 amount mismatch.', 'vinti4' ) );
@@ -335,14 +440,11 @@ class Vinti4_Callback_Handler {
 			$paid_total       = Vinti4_Attempt_Store::get_paid_total( $order );
 			$outstanding_total = Vinti4_Attempt_Store::get_outstanding_total( $order );
 
-			Vinti4_Logger::log(
-				sprintf(
-					'Callback success: attempt %s completed for order %d. Paid: %.2f, Outstanding: %.2f.',
-					$attempt_id,
-					$order->get_id(),
-					$paid_total,
-					$outstanding_total
-				)
+			self::log_callback_outcome(
+				$order,
+				array_merge( $attempt, array( 'transaction_id' => $transaction_id ) ),
+				'success',
+				sprintf( 'Paid: %.2f, Outstanding: %.2f', $paid_total, $outstanding_total )
 			);
 
 			// Handle order completion based on outstanding balance.
@@ -395,16 +497,11 @@ class Vinti4_Callback_Handler {
 			$attempt_id,
 			trim( $error_detail . ' - ' . $error_description )
 		);
-		Vinti4_Logger::log(
-			sprintf(
-				'Payment failed for order %d, attempt %s. messageType: %s, errorDetail: %s, errorDescription: %s.',
-				$order->get_id(),
-				$attempt_id,
-				$message_type,
-				$error_detail,
-				$error_description
-			),
-			'warning'
+		self::log_callback_outcome(
+			$order,
+			$attempt,
+			'failure',
+			sprintf( 'messageType: %s, errorDetail: %s, errorDescription: %s', $message_type, $error_detail, $error_description )
 		);
 		$order->update_status(
 			'failed',
@@ -458,14 +555,11 @@ class Vinti4_Callback_Handler {
 		$stored_ref = $order->get_meta( '_vinti4_merchant_ref' );
 
 		if ( $stored_ref !== $merchant_ref ) {
-			Vinti4_Logger::log(
-				sprintf(
-					'Callback rejected: merchantRef mismatch for legacy order %d. Stored: "%s", Received: "%s".',
-					$order->get_id(),
-					$stored_ref,
-					$merchant_ref
-				),
-				'warning'
+			self::log_validation_failure(
+				$order,
+				array( 'attempt_id' => 'legacy', 'merchant_ref' => $merchant_ref ),
+				'invalid_reference',
+				sprintf( 'Stored: "%s", Received: "%s"', $stored_ref, $merchant_ref )
 			);
 			wp_safe_redirect( wc_get_checkout_url() );
 			exit;
@@ -475,12 +569,10 @@ class Vinti4_Callback_Handler {
 		$already_processed = $order->get_meta( '_vinti4_callback_processed' );
 
 		if ( $already_processed ) {
-			Vinti4_Logger::log(
-				sprintf(
-					'Duplicate callback detected for legacy order %d (already processed). Redirecting.',
-					$order->get_id()
-				),
-				'notice'
+			self::log_duplicate_callback(
+				$order,
+				array( 'attempt_id' => 'legacy', 'merchant_ref' => $merchant_ref ),
+				(string) $already_processed
 			);
 			if ( in_array( $order->get_status(), array( 'processing', 'completed' ), true ) ) {
 				wp_safe_redirect( $order->get_checkout_order_received_url() );
@@ -515,14 +607,11 @@ class Vinti4_Callback_Handler {
 			);
 
 			if ( $expected_fingerprint !== $result_fingerprint ) {
-				Vinti4_Logger::log(
-					sprintf(
-						'Callback rejected for legacy order %d: fingerprint mismatch. merchantRef: %s, messageType: %s.',
-						$order->get_id(),
-						$merchant_ref,
-						$message_type
-					),
-					'error'
+				self::log_validation_failure(
+					$order,
+					array( 'attempt_id' => 'legacy', 'merchant_ref' => $merchant_ref ),
+					'invalid_fingerprint',
+					sprintf( 'Legacy order, messageType: %s', $message_type )
 				);
 				$order->update_status( 'failed', __( 'Vinti4 fingerprint validation failed.', 'vinti4' ) );
 				self::mark_processed_and_redirect( $order, wc_get_checkout_url() );
@@ -533,14 +622,11 @@ class Vinti4_Callback_Handler {
 			$response_amount = (int) $purchase_amount;
 
 			if ( $stored_amount !== $response_amount ) {
-				Vinti4_Logger::log(
-					sprintf(
-						'Callback rejected for legacy order %d: amount mismatch. Stored: %d, Response: %d.',
-						$order->get_id(),
-						$stored_amount,
-						$response_amount
-					),
-					'error'
+				self::log_validation_failure(
+					$order,
+					array( 'attempt_id' => 'legacy', 'merchant_ref' => $merchant_ref ),
+					'amount_mismatch',
+					sprintf( 'Legacy order, Stored: %d, Response: %d', $stored_amount, $response_amount )
 				);
 				$order->update_status( 'failed', __( 'Vinti4 amount mismatch.', 'vinti4' ) );
 				self::mark_processed_and_redirect( $order, wc_get_checkout_url() );
@@ -548,14 +634,16 @@ class Vinti4_Callback_Handler {
 
 			// Complete the order (legacy path — always full payment for single-attempt orders).
 			$order->payment_complete( $transaction_id );
-			Vinti4_Logger::log(
-				sprintf(
-					'Legacy payment completed for order %d. TID: %s, merchantRef: %s, messageType: %s.',
-					$order->get_id(),
-					$transaction_id,
-					$merchant_ref,
-					$message_type
-				)
+			self::log_callback_outcome(
+				$order,
+				array(
+					'attempt_id'     => 'legacy',
+					'merchant_ref'   => $merchant_ref,
+					'amount'         => $purchase_amount,
+					'transaction_id' => $transaction_id,
+				),
+				'success',
+				sprintf( 'Legacy payment, TID: %s, messageType: %s', $transaction_id, $message_type )
 			);
 			$order->add_order_note(
 				sprintf(
@@ -568,15 +656,11 @@ class Vinti4_Callback_Handler {
 		}
 
 		// Legacy failure path.
-		Vinti4_Logger::log(
-			sprintf(
-				'Legacy payment failed for order %d. messageType: %s, errorDetail: %s, errorDescription: %s.',
-				$order->get_id(),
-				$message_type,
-				$error_detail,
-				$error_description
-			),
-			'warning'
+		self::log_callback_outcome(
+			$order,
+			array( 'attempt_id' => 'legacy', 'merchant_ref' => $merchant_ref ),
+			'failure',
+			sprintf( 'messageType: %s, errorDetail: %s, errorDescription: %s', $message_type, $error_detail, $error_description )
 		);
 		$order->update_status(
 			'failed',
@@ -616,6 +700,16 @@ class Vinti4_Callback_Handler {
 			)
 		);
 
+		Vinti4_Logger::log(
+			sprintf(
+				'Vinti4 callback completed: order=%d attempt=%s status=%s',
+				$order->get_id(),
+				$attempt_id,
+				$order->get_status()
+			),
+			'debug'
+		);
+
 		wp_safe_redirect( $redirect_url );
 		exit;
 	}
@@ -636,6 +730,16 @@ class Vinti4_Callback_Handler {
 	private static function mark_processed_and_redirect( WC_Order $order, string $redirect_url ): void {
 		$order->update_meta_data( '_vinti4_callback_processed', '1' );
 		$order->save();
+
+		Vinti4_Logger::log(
+			sprintf(
+				'Vinti4 callback completed: order=%d attempt=legacy status=%s',
+				$order->get_id(),
+				$order->get_status()
+			),
+			'debug'
+		);
+
 		wp_safe_redirect( $redirect_url );
 		exit;
 	}
