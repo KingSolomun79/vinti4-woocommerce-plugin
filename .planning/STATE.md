@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 10 in progress — admin partial request flow
+**Current focus:** Phase 10 complete — admin partial request flow done
 
 ## Current Position
 
-Phase: 10 of 11 (Admin Partial Request Flow) — In progress
-Plan: 10-01 complete
-Status: Plan 10-01 complete, 10-02 next
-Last activity: 2026-04-18 — Completed 10-01 admin partial payment meta box
+Phase: 10 of 11 (Admin Partial Request Flow) — Complete
+Plan: 10-02 complete (phase finished)
+Status: Phase 10 complete — both plans done
+Last activity: 2026-04-18 — Completed 10-02 attempt history and diagnostics
 
 Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Total plans created: 15 (Phase 9: 2, Phase 10: 1, Phase 11: 2, plus Phases 01-08 from v1.0)
+- Total plans completed: 16
+- Total plans created: 15 (Phase 9: 2, Phase 10: 2, Phase 11: 2, plus Phases 01-08 from v1.0)
 - Average duration: ~5 min
-- Total execution time: ~73 min
+- Total execution time: ~77 min
 
 **By Phase:**
 
@@ -34,7 +34,7 @@ Progress: ██████████ 100%
 | 04-payment-redirect-flow | 2 | ~9 min | ~4.5 min |
 | 05-callback-idempotency | 3 | ~8 min | ~2.7 min |
 | 06-checkout-block-support | 1 | ~1 min | ~1 min |
-| 10-admin-partial-request | 1/2 | ~3 min | ~3 min |
+| 10-admin-partial-request | 2/2 | ~7 min | ~3.5 min |
 | 11-callback-reconciliation | 2/2 | ~14 min | ~7 min |
 
 *Updated after each plan completion*
@@ -100,6 +100,10 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - 10-01: HPOS dual registration via both shop_order and woocommerce_page_wc-orders screens
 - 10-01: Outstanding tolerance uses +0.01 buffer for floating-point edge cases
 - 10-01: Logger require uncommented — fixes latent fatal error in attempt lookup failure path
+- 10-02: Progress bar uses inline CSS for zero-dependency rendering
+- 10-02: Status badges use hardcoded color scheme (green=Paid, red=Failed, amber=Pending)
+- 10-02: Resend link re-projects attempt to legacy meta and returns payment link for clipboard
+- 10-02: Diagnostic test checks class load plus register() and handle_create_partial_request() methods
 - 11-01: Callback resolves attempt by merchantRef before order mutation
 - 11-01: Idempotency is enforced per attempt via "_vinti4_attempt_{attempt_id}_processed" meta keys
 - 11-01: Partial payment callbacks update paid/outstanding totals accurately across multiple attempts
@@ -114,7 +118,6 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 ### Pending Todos
 
 - PHP CLI is unavailable in the current execution environment; lint and PHPUnit verification for all phases must be rerun in a PHP-enabled environment.
-- Plan 10-02 remains to be executed.
 
 ### Blockers/Concerns
 
@@ -122,6 +125,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-18 06:27 UTC
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-04-18 06:36 UTC
+Stopped at: Completed 10-02-PLAN.md (Phase 10 complete)
 Resume file: None
