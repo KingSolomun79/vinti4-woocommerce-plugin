@@ -27,6 +27,12 @@ define( 'VINTI4_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Load admin notices unconditionally — must work even without WooCommerce.
 require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-notices.php';
+require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-feature-compatibility.php';
+
+function vinti4_declare_woocommerce_compatibility() {
+	Vinti4_Feature_Compatibility::declare_compatibility();
+}
+add_action( 'before_woocommerce_init', 'vinti4_declare_woocommerce_compatibility' );
 
 /**
  * Bootstrap the plugin after all other plugins are loaded.
@@ -53,9 +59,11 @@ function vinti4_init() {
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-wc-vinti4-blocks-support.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-partial-payment.php';
+	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-test-panel.php';
 
 	if ( is_admin() ) {
 		Vinti4_Admin_Partial_Payment::register();
+		Vinti4_Admin_Test_Panel::register();
 	}
 
 	// Register the vinti4-payment rewrite endpoint.
