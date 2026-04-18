@@ -45,8 +45,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 10-01-PLAN.md — Build admin partial amount form + validation and outstanding balance computation
-- [ ] 10-02-PLAN.md — Wire request dispatch path to new attempt context and admin action flow
+- [ ] 10-01-PLAN.md — Create admin meta box with partial amount form, validation, AJAX attempt creation, and payment link generation
+- [ ] 10-02-PLAN.md — Add attempt history table, payment progress display, resend link functionality, and diagnostic test
 
 ### Phase 11: Callback Reconciliation and Compatibility Verification
 **Goal**: Callbacks resolve and mutate state at attempt granularity while preserving existing card redirect behavior.
