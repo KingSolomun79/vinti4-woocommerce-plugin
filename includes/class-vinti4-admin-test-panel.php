@@ -170,6 +170,7 @@ class Vinti4_Admin_Test_Panel {
 		$results[] = self::test_feature_compatibility_declarations();
 		$results[] = self::test_callback_duplicate_detection();
 		$results[] = self::test_callback_invalid_fingerprint();
+		$results[] = self::test_admin_partial_payment();
 
 		return $results;
 	}
@@ -600,6 +601,38 @@ class Vinti4_Admin_Test_Panel {
 			'detail' => $ok
 				? 'Callback handler validates response fingerprint with build_response_fingerprint() comparison.'
 				: 'Callback handler missing fingerprint validation (expected_fingerprint / fingerprint mismatch / build_response_fingerprint).',
+		);
+	}
+
+	private static function test_admin_partial_payment(): array {
+		if ( ! class_exists( 'Vinti4_Admin_Partial_Payment' ) ) {
+			return array(
+				'name'   => 'Admin Partial Payment',
+				'status' => 'fail',
+				'detail' => 'Vinti4_Admin_Partial_Payment class not loaded.',
+			);
+		}
+
+		if ( ! method_exists( 'Vinti4_Admin_Partial_Payment', 'register' ) ) {
+			return array(
+				'name'   => 'Admin Partial Payment',
+				'status' => 'fail',
+				'detail' => 'Vinti4_Admin_Partial_Payment missing expected method: register.',
+			);
+		}
+
+		if ( ! method_exists( 'Vinti4_Admin_Partial_Payment', 'handle_create_partial_request' ) ) {
+			return array(
+				'name'   => 'Admin Partial Payment',
+				'status' => 'fail',
+				'detail' => 'Vinti4_Admin_Partial_Payment missing expected method: handle_create_partial_request.',
+			);
+		}
+
+		return array(
+			'name'   => 'Admin Partial Payment',
+			'status' => 'pass',
+			'detail' => 'Vinti4_Admin_Partial_Payment class loaded with register() and handle_create_partial_request() methods.',
 		);
 	}
 }
