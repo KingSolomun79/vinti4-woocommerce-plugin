@@ -210,8 +210,27 @@ class Vinti4_Callback_Handler {
 		// Step 2 — Parse order ID and load order.
 		$order_id = vinti4_parse_order_id_from_ref( $merchant_ref );
 
+		Vinti4_Logger::log(
+			sprintf(
+				'Callback lookup: merchant_ref="%s" len=%d parse_result=%d',
+				$merchant_ref,
+				strlen( $merchant_ref ),
+				$order_id
+			),
+			'debug'
+		);
+
 		if ( 0 === $order_id ) {
 			$order_id = vinti4_find_order_id_by_merchant_ref( $merchant_ref );
+
+			Vinti4_Logger::log(
+				sprintf(
+					'Callback meta lookup: merchant_ref="%s" found_order=%d',
+					$merchant_ref,
+					$order_id
+				),
+				'debug'
+			);
 		}
 
 		if ( 0 === $order_id ) {

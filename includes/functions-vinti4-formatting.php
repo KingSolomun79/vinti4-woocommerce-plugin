@@ -106,12 +106,14 @@ function vinti4_find_order_id_by_merchant_ref( string $merchant_ref ): int {
 
 	$orders = wc_get_orders(
 		array(
-			'limit'      => 1,
-			'return'     => 'ids',
-			'meta_key'   => '_vinti4_merchant_ref',
-			'meta_value' => $merchant_ref,
-			'orderby'    => 'date',
-			'order'      => 'DESC',
+			'limit'  => 1,
+			'return' => 'ids',
+			'meta_query' => array(
+				array(
+					'key'   => '_vinti4_merchant_ref',
+					'value' => $merchant_ref,
+				),
+			),
 		)
 	);
 
