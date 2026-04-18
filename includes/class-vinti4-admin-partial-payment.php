@@ -10,6 +10,7 @@ class Vinti4_Admin_Partial_Payment {
 	public static function register(): void {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_box' ) );
 		add_action( 'wp_ajax_vinti4_create_partial_request', array( __CLASS__, 'handle_create_partial_request' ) );
+		add_action( 'wp_ajax_vinti4_reproject_attempt', array( __CLASS__, 'handle_reproject_attempt' ) );
 	}
 
 	public static function add_meta_box(): void {
@@ -59,6 +60,66 @@ class Vinti4_Admin_Partial_Payment {
 		echo '<tr><td>' . esc_html__( 'Paid:', 'vinti4' ) . '</td><td>' . wc_price( $paid ) . '</td></tr>';
 		echo '<tr><td>' . esc_html__( 'Outstanding:', 'vinti4' ) . '</td><td style="' . esc_attr( $highlight ) . '">' . wc_price( $outstanding ) . '</td></tr>';
 		echo '</table>';
+
+		$progress_percent = $order_total > 0 ? round( ( $paid / $order_total ) * 100, 1 ) : 0;
+
+		echo '<div style="background:#e0e0e0;border-radius:4px;height:8px;margin:4px 0 8px">';
+		echo '<div style="background:#2271b1;height:8px;border-radius:4px;width:' . esc_attr( (string) $progress_percent ) . '%"></div>';
+		echo '</div>';
+		echo '<small>' . esc_html( (string) $progress_percent ) . '% ' . esc_html__( 'paid', 'vinti4' ) . '</small>';
+
+		$attempts = Vinti4_Attempt_Store::get_attempts( $order );
+
+		if ( ! empty( $attempts ) ) {
+			echo '<h4 style="margin:12px 0 4px">' . esc_html__( 'Payment History', 'vinti4' ) . '</h4>';
+			echo '<table class="widefat fixed striped" style="margin-top:8px;font-size:12px">';
+			echo '<thead><tr>';
+			echo '<th>#</th>';
+			echo '<th>' . esc_html__( 'Amount', 'vinti4' ) . '</th>';
+			echo '<th>' . esc_html__( 'Status', 'vinti4' ) . '</th>';
+			echo '<th>' . esc_html__( 'Date', 'vinti4' ) . '</th>';
+			echo '<th>' . esc_html__( 'Reference', 'vinti4' ) . '</th>';
+			echo '<th></th>';
+			echo '</tr></thead>';
+			echo '<tbody>';
+
+			foreach ( $attempts as $attempt ) {
+				$sequence    = $attempt['sequence'] ?? '';
+				$amount      = wc_price( (float) ( $attempt['amount'] ?? 0 ) );
+				$status_raw  = $attempt['status'] ?? '';
+				$date_raw    = $attempt['created_at_gmt'] ?? '';
+				$ref_raw     = $attempt['merchant_ref'] ?? '';
+
+				if ( 'completed' === $status_raw ) {
+					$badge = '<span style="background:#00a32a;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px">' . esc_html__( 'Paid', 'vinti4' ) . '</span>';
+				} elseif ( 'failed' === $status_raw ) {
+					$badge = '<span style="background:#b32d2e;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px">' . esc_html__( 'Failed', 'vinti4' ) . '</span>';
+				} else {
+					$badge = '<span style="background:#dba617;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px">' . esc_html__( 'Pending', 'vinti4' ) . '</span>';
+				}
+
+				$date_display = '' !== $date_raw ? gmdate( 'Y-m-d H:i', strtotime( $date_raw ) ) : '';
+				$ref_display  = '' !== $ref_raw ? '<code>' . esc_html( substr( $ref_raw, -12 ) ) . '</code>' : '';
+
+				$resend_link = '';
+				if ( 'completed' !== $status_raw ) {
+					$attempt_id = $attempt['attempt_id'] ?? '';
+					$resend_link = '<a href="#" onclick="vinti4ReprojectAttempt(\'' . esc_js( $attempt_id ) . '\',' . esc_js( (string) $order->get_id() ) . ',\'' . esc_js( wp_create_nonce( 'vinti4_partial_payment' ) ) . '\');return false;" style="font-size:11px">' . esc_html__( 'Resend', 'vinti4' ) . '</a>';
+				}
+
+				echo '<tr>';
+				echo '<td>' . esc_html( (string) $sequence ) . '</td>';
+				echo '<td>' . $amount . '</td>';
+				echo '<td>' . $badge . '</td>';
+				echo '<td>' . esc_html( $date_display ) . '</td>';
+				echo '<td>' . $ref_display . '</td>';
+				echo '<td>' . $resend_link . '</td>';
+				echo '</tr>';
+			}
+
+			echo '</tbody>';
+			echo '</table>';
+		}
 
 		if ( $outstanding <= 0 ) {
 			echo '<p>' . esc_html__( 'This order is fully paid.', 'vinti4' ) . '</p>';
@@ -165,6 +226,38 @@ class Vinti4_Admin_Partial_Payment {
 				});
 			}
 		})();
+
+		function vinti4ReprojectAttempt(attemptId, orderId, nonce) {
+			var formData = new FormData();
+			formData.append('action', 'vinti4_reproject_attempt');
+			formData.append('vinti4_partial_nonce', nonce);
+			formData.append('vinti4_order_id', orderId);
+			formData.append('vinti4_attempt_id', attemptId);
+
+			fetch(ajaxurl, {
+				method: 'POST',
+				body: formData,
+				credentials: 'same-origin'
+			})
+			.then(function(response) { return response.json(); })
+			.then(function(response) {
+				if (response.success) {
+					var link = response.data.payment_link;
+					if (link && navigator.clipboard) {
+						navigator.clipboard.writeText(link).then(function() {
+							alert('<?php echo esc_js( __( 'Payment link copied to clipboard.', 'vinti4' ) ); ?>');
+						});
+					} else if (link) {
+						prompt('<?php echo esc_js( __( 'Payment Link:', 'vinti4' ) ); ?>', link);
+					}
+				} else {
+					alert(response.data.message || '<?php echo esc_js( __( 'An error occurred.', 'vinti4' ) ); ?>');
+				}
+			})
+			.catch(function() {
+				alert('<?php echo esc_js( __( 'Request failed. Please try again.', 'vinti4' ) ); ?>');
+			});
+		}
 		</script>
 		<?php
 	}
@@ -258,5 +351,48 @@ class Vinti4_Admin_Partial_Payment {
 			'amount'       => $amount,
 			'attempt_id'   => $attempt['attempt_id'] ?? '',
 		) );
+	}
+
+	public static function handle_reproject_attempt(): void {
+		check_ajax_referer( 'vinti4_partial_payment', 'vinti4_partial_nonce' );
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'vinti4' ) ) );
+		}
+
+		$order_id    = absint( $_POST['vinti4_order_id'] ?? 0 );
+		$attempt_id  = sanitize_text_field( wp_unslash( $_POST['vinti4_attempt_id'] ?? '' ) );
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			wp_send_json_error( array( 'message' => __( 'Order not found.', 'vinti4' ) ) );
+		}
+
+		$attempts    = Vinti4_Attempt_Store::get_attempts( $order );
+		$found       = null;
+
+		foreach ( $attempts as $attempt ) {
+			if ( isset( $attempt['attempt_id'] ) && $attempt['attempt_id'] === $attempt_id ) {
+				$found = $attempt;
+				break;
+			}
+		}
+
+		if ( null === $found ) {
+			wp_send_json_error( array( 'message' => __( 'Attempt not found.', 'vinti4' ) ) );
+		}
+
+		Vinti4_Attempt_Store::project_latest_attempt_to_legacy_meta( $order, $found );
+		$order->save();
+
+		$payment_link = add_query_arg(
+			array(
+				'order' => $order->get_id(),
+				'key'   => $order->get_order_key(),
+			),
+			home_url( '/vinti4-payment/' )
+		);
+
+		wp_send_json_success( array( 'payment_link' => $payment_link ) );
 	}
 }
