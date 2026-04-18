@@ -139,9 +139,6 @@ class Vinti4_Attempt_Store {
 			}
 		}
 
-		$order->update_meta_data( '_vinti4_paid_total', $paid );
-		$order->save();
-
 		return $paid;
 	}
 

@@ -42,6 +42,11 @@ class Vinti4_Admin_Partial_Payment {
 			return;
 		}
 
+		// Only render for Vinti4 orders.
+		if ( 'vinti4' !== $order->get_payment_method() ) {
+			return;
+		}
+
 		$outstanding  = Vinti4_Attempt_Store::get_outstanding_total( $order );
 		$paid         = Vinti4_Attempt_Store::get_paid_total( $order );
 		$order_total  = (float) $order->get_total();

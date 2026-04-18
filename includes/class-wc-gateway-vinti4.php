@@ -49,6 +49,9 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 		$this->debug            = $this->get_option( 'debug' );
 		$this->currency_default = $this->get_option( 'currency_default' );
 
+		// Initialize logger with gateway settings.
+		Vinti4_Logger::init( $this );
+
 		// Save settings on admin update.
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 

@@ -84,8 +84,7 @@ class Vinti4_Request_Builder {
 			$merchant_session,
 			$gateway->pos_id,
 			$currency,
-			$transaction_code,
-			'', '', ''
+			$transaction_code
 		);
 
 		return array(

@@ -3,7 +3,7 @@
  * Plugin Name: Vinti4 for WooCommerce
  * Plugin URI:  https://github.com/vinti4/vinti4-woocommerce-plugin
  * Description: Accept payments via Vinti4 / SISP hosted payment page on your WooCommerce store.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Vinti4
  * Author URI:  https://www.vinti4.cv
  * License:     GPLv3
@@ -20,7 +20,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Constants.
-define( 'VINTI4_VERSION', '1.0.0' );
+define( 'VINTI4_VERSION', '1.1.0' );
 define( 'VINTI4_PLUGIN_FILE', __FILE__ );
 define( 'VINTI4_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VINTI4_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -98,9 +98,9 @@ add_action(
 );
 
 // Phase: i18n — Load plugin text domain.
-// add_action( 'plugins_loaded', function () {
-//     load_plugin_textdomain( 'vinti4', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
-// } );
+add_action( 'plugins_loaded', function () {
+    load_plugin_textdomain( 'vinti4', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+} );
 
 /**
  * Add rewrite rule for the Vinti4 payment page endpoint.
