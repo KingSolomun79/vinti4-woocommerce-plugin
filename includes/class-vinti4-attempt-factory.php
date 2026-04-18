@@ -105,47 +105,68 @@ class Vinti4_Attempt_Factory {
 	}
 
 	/**
-	 * Build merchantRef preserving WC{order_id}- parse compatibility.
+	 * Build merchantRef exactly 15 characters: MM + yymmddHHMMSS + 1 suffix.
 	 *
-	 * @param int    $order_id  WooCommerce order ID.
+	 * SISP requires merchantRef to be exactly 15 characters. Format:
+	 *   MM + 12-digit timestamp (ymdHis) + 1 alphanumeric suffix = 15 chars.
+	 *
+	 * @param int    $order_id  WooCommerce order ID (unused, kept for API compat).
 	 * @param string $timestamp Attempt timestamp.
 	 * @param string $entropy   Attempt entropy token.
-	 * @return string
+	 * @return string Exactly 15 characters.
 	 */
 	private function build_merchant_ref( int $order_id, string $timestamp, string $entropy ): string {
+		unset( $order_id );
+
 		$stamp = preg_replace( '/\D/', '', $timestamp );
 
 		if ( ! is_string( $stamp ) || '' === $stamp ) {
 			$stamp = gmdate( 'YmdHis' );
 		}
 
-		$entropy_token = preg_replace( '/[^A-Za-z0-9]/', '', $entropy );
-		if ( ! is_string( $entropy_token ) || '' === $entropy_token ) {
-			$entropy_token = substr( md5( $timestamp ), 0, 10 );
-		}
+		// Take last 12 digits of timestamp (equivalent to yymmddHHMMSS).
+		$stamp12 = substr( $stamp, -12 );
 
-		return sprintf( 'WC%d-%s%s', $order_id, $stamp, strtolower( substr( $entropy_token, 0, 8 ) ) );
+		// 1 alphanumeric suffix from entropy for uniqueness.
+		$clean_entropy = preg_replace( '/[^A-Za-z0-9]/', '', $entropy );
+		if ( ! is_string( $clean_entropy ) || '' === $clean_entropy ) {
+			$clean_entropy = substr( md5( $timestamp ), 0, 10 );
+		}
+		$suffix = strtolower( substr( $clean_entropy, 0, 1 ) );
+
+		return 'MM' . $stamp12 . $suffix;
 	}
 
 	/**
-	 * Build merchantSession with timestamp and entropy for uniqueness.
+	 * Build merchantSession exactly 15 characters: MS + yymmddHHMMSS + 1 suffix.
+	 *
+	 * SISP requires merchantSession to be exactly 15 characters. Format:
+	 *   MS + 12-digit timestamp (ymdHis) + 1 alphanumeric suffix = 15 chars.
+	 *
+	 * Always different from merchantRef (different prefix + different suffix char).
 	 *
 	 * @param string $timestamp Attempt timestamp.
 	 * @param string $entropy   Attempt entropy token.
-	 * @return string
+	 * @return string Exactly 15 characters.
 	 */
 	private function build_merchant_session( string $timestamp, string $entropy ): string {
 		$stamp = preg_replace( '/\D/', '', $timestamp );
+
 		if ( ! is_string( $stamp ) || '' === $stamp ) {
 			$stamp = gmdate( 'YmdHis' );
 		}
 
-		$entropy_token = preg_replace( '/[^A-Za-z0-9]/', '', $entropy );
-		if ( ! is_string( $entropy_token ) || '' === $entropy_token ) {
-			$entropy_token = substr( md5( $timestamp ), 0, 12 );
-		}
+		// Take last 12 digits of timestamp (equivalent to yymmddHHMMSS).
+		$stamp12 = substr( $stamp, -12 );
 
-		return 'S' . substr( $stamp, -8 ) . strtolower( substr( $entropy_token, 0, 12 ) );
+		// 1 alphanumeric suffix — use a DIFFERENT position from merchantRef.
+		$clean_entropy = preg_replace( '/[^A-Za-z0-9]/', '', $entropy );
+		if ( ! is_string( $clean_entropy ) || '' === $clean_entropy ) {
+			$clean_entropy = substr( md5( $timestamp ), 0, 12 );
+		}
+		$suffix = strtolower( substr( $clean_entropy, -1 ) );
+
+		return 'MS' . $stamp12 . $suffix;
 	}
 
 	/**
