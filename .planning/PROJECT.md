@@ -1,22 +1,12 @@
-# Vinti4 for WooCommerce — v1 Remediation
+# Vinti4 for WooCommerce — Payment Gateway Plugin
 
 ## What This Is
 
-A complete rewrite of the Vinti4 WooCommerce payment gateway plugin from a brittle legacy adaptation into a proper, modern WooCommerce payment extension. The plugin integrates with SISP (Sistema Interbancário de Pagamentos) to process card payments (Vinti4, Visa, Mastercard, American Express) via a hosted redirect flow. Target market is Cape Verde (default) and Angola, with the plugin structured to support additional SISP markets.
+A modern WooCommerce payment gateway plugin integrating with SISP (Sistema Interbancário de Pagamentos) to process card payments (Vinti4, Visa, Mastercard, American Express) via a hosted 3DS redirect flow. Supports partial deposits and multi-attempt payment requests. Target market is Cape Verde (default) and Angola, with the plugin structured to support additional SISP markets.
 
 ## Core Value
 
 A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-
-## Current Milestone: v1.1 Partial Deposits and Multi-Attempt Payments
-
-**Goal:** Enable partial payment requests from admin/dashboard by creating fresh, attempt-scoped SISP references for each payment request while preserving the existing card redirect flow.
-
-**Target features:**
-- Admin can create a new payment attempt for an existing WooCommerce order using a partial amount (percentage or fixed amount)
-- Every partial attempt generates a unique merchantRef, merchantSession, and fingerprint bound to that exact amount
-- Attempt history is persisted per order so retries and installments do not overwrite the original 100% checkout context
-- Callback and reconciliation logic resolves per attempt and supports partial-paid progression to fully paid
 
 ## Requirements
 
@@ -30,17 +20,26 @@ A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to S
 - [x] Checkout Block integration is implemented (v1.0)
 - [x] Structured logging and diagnostics are implemented with secret redaction (v1.0)
 - [x] Baseline tests and certification prep artifacts were delivered (v1.0)
+- [x] Admin can create a new payment attempt from an existing WooCommerce order without re-running checkout (v1.1)
+- [x] Each new attempt creates a unique merchantRef and merchantSession (v1.1)
+- [x] Request fingerprint is generated from attempt-scoped data, with amount bound to that attempt (v1.1)
+- [x] Attempt metadata is stored as append-only history (no overwrite) (v1.1)
+- [x] Admin can request a partial payment using percentage and fixed amount modes (v1.1)
+- [x] Partial amount validation blocks invalid values (v1.1)
+- [x] Outstanding balance is computed from successful paid attempts (v1.1)
+- [x] A successful attempt updates paid/outstanding totals correctly at order level (v1.1)
+- [x] Admin can send a payment request link/form for a specific attempt (v1.1)
+- [x] Callback lookup resolves the exact attempt by attempt reference context before order mutation (v1.1)
+- [x] Idempotency guard is enforced per attempt (v1.1)
+- [x] Invalid reference/session/fingerprint fails safely with diagnostic reason (v1.1)
+- [x] Existing hosted 3DS redirect flow remains functional after multi-attempt changes (v1.1)
+- [x] Sandbox 3DS test card can complete a partial-attempt payment path in test mode (v1.1)
+- [x] Logs include attempt ID, amount, merchantRef, and callback outcome per attempt (v1.1)
+- [x] Logs distinguish invalid reference vs invalid fingerprint vs duplicate callback (v1.1)
 
 ### Active
 
-- [ ] Admin can send a payment request for a partial amount on an existing order
-- [ ] Partial amount requests always create a fresh merchantRef + merchantSession + fingerprint tuple
-- [ ] Fingerprint amount always matches the exact partial attempt amount (SISP validation-safe)
-- [ ] Attempt metadata is stored as attempt history per order (no destructive overwrite of previous attempts)
-- [ ] Callback validation resolves against the specific attempt, not only the original order-level attempt
-- [ ] Duplicate callbacks are prevented per attempt in multi-attempt flows
-- [ ] Order payment state tracks partial-paid versus fully-paid progression across attempts
-- [ ] Existing card payment rails (Vinti4/Visa/Mastercard/Amex through SISP 3DS redirect) remain working after multi-attempt changes
+(No active requirements — all v1.0 and v1.1 requirements validated. Next milestone will define new active requirements.)
 
 ### Out of Scope
 
@@ -52,8 +51,41 @@ A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to S
 - Full SISP tokenization flows in WooCommerce UI — v2 scope
 - Direct card data entry inside WooCommerce checkout (non-hosted flow) — not part of current SISP hosted redirect model
 - Automated installment schedules and dunning workflows — deferred until manual partial request flow is stable
+- Scheduled installment plans (COLL-01) — future milestone
+- Automatic reminders and dunning (COLL-02) — future milestone
+- Customer self-service portal for remaining balance (COLL-03) — future milestone
+- Admin capture/void/refund per attempt (OPS-01) — future milestone
+- Attempt replay tool (OPS-02) — future milestone
 
 ## Context
+
+### Current Codebase State
+
+Shipped v1.0 + v1.1. Total ~6,871 PHP lines (production + tests). 16 production classes, 48+ unit tests, 12 admin self-tests.
+
+**Tech stack:** PHP 8.1+, WordPress, WooCommerce 10.7+, SISP 3DS hosted redirect, HPOS-safe order meta.
+
+### Architecture
+
+- Gateway: `WC_Gateway_Vinti4` extends `WC_Payment_Gateway`
+- Request Builder: `Vinti4_Request_Builder` with SHA-512+Base64 fingerprint
+- Callback Handler: `Vinti4_Callback_Handler` with attempt-level reconciliation
+- Attempt Factory: `Vinti4_Attempt_Factory` for canonical attempt creation
+- Attempt Store: `Vinti4_Attempt_Store` for append-only history + legacy projection
+- Admin: `Vinti4_Admin_Partial_Payment` for meta box + AJAX
+- Blocks: `WC_Vinti4_Blocks_Support` extends `AbstractPaymentMethodType`
+- Logging: `Vinti4_Logger` with secret redaction
+- Test Panel: `Vinti4_Admin_Test_Panel` with 12 diagnostic self-tests
+
+### Known Issues / Technical Debt
+
+- PHP CLI not available in dev environment — lint and PHPUnit must be verified before release
+- Admin meta box renders for all shop_order posts regardless of payment method (should check Vinti4 gateway)
+- `mark_attempt_completed()` relies on implicit save() via `get_paid_total()` — fragile if refactored
+- Redundant `get_paid_total()` calls in callback handler (3 where 1 suffices)
+- Amount type variance: stored string, validated int, summed float — consistent but type-fragile
+- Logger never initialized in tests (debug=false) — logging paths untested
+- E2E SISP flow requires running WP/WC/SISP stack for runtime verification
 
 ### Legacy Plugin Analysis
 
@@ -68,48 +100,27 @@ The legacy plugin at `KingSolomun79/vinti4-wp-plugin` has been fully analyzed. K
 - `api/index.php`, `index.php`, `uninstall.php` — Stubs
 
 **Code worth preserving (from `api/lib.php`):**
-- `GerarFingerPrintEnvio()` — Request fingerprint: SHA-512 + Base64, field order: `sha512(posAutCode) + timestamp + (amount*1000) + merchantRef + merchantSession + posID + currency + transactionCode + entityCode + referenceNumber`
-- `GerarFingerPrintRespostaBemSucedida()` — Response fingerprint with 16 fields including messageType, clearingPeriod, transactionID, merchantReference, amount, pan, merchantResponse, etc.
+- `GerarFingerPrintEnvio()` — Request fingerprint: SHA-512 + Base64
+- `GerarFingerPrintRespostaBemSucedida()` — Response fingerprint with 16 fields
 - Success message types: `"8"`, `"10"`, `"M"`, `"P"`
 
-**Legacy problems that MUST be fixed:**
-- Gateway ID is numeric `2424` (must be string `vinti4`)
-- No `class_exists('WC_Payment_Gateway')` guard
-- `new WC_Gateway_vinti4()` called directly in bootstrap
-- `api/callback.php` uses `require_once("../../../../wp-load.php")` (brittle)
-- `api/postback.php` uses same brittle wp-load pattern
-- Zero callback idempotency / duplicate protection
-- `merchantRef = order_id` (bare order ID, not unique per attempt)
-- Manual `$order->reduce_order_stock()` instead of `payment_complete()`
-- Raw SQL: `DELETE FROM wp_posts WHERE post_title LIKE '%vinti4%'`
-- Creates pages on activation, deletes on deactivation
-- Separate top-level admin menu (not WooCommerce payment settings)
-- `purchaseDate` still in purchaseRequest JSON (deprecated by SISP)
-- Uses `sokil/php-isocodes` Composer dependency (should be eliminated)
-- Currency hardcoded to `'132'`
-
-**purchaseRequest JSON structure (from `api/postback.php`):**
-- `acctID`, `acctInfo` (chAccAgeInd, chAccChange, chAccDate, etc.)
-- `email`, `addrMatch`
-- Billing address: `billAddrCity`, `billAddrCountry`, `billAddrLine1/2/3`, `billAddrPostCode`, `billAddrState`
-- Shipping address: `shipAddrCity`, `shipAddrCountry`, `shipAddrLine1`, `shipAddrPostCode`, `shipAddrState`
-- Phone: `workPhone`, `mobilePhone` (with cc and subscriber fields)
-- `purchaseDate` (DEPRECATED — must be removed per PRD)
+**Legacy problems fixed in rewrite:**
+- Gateway ID is numeric `2424` → string `vinti4`
+- No `class_exists('WC_Payment_Gateway')` guard → added
+- `new WC_Gateway_vinti4()` called directly → filter-based registration
+- Brittle `require_once("../../../../wp-load.php")` → `woocommerce_api_{gateway_id}`
+- Zero callback idempotency → per-attempt idempotency
+- `merchantRef = order_id` → unique per-attempt with entropy
+- Manual `$order->reduce_order_stock()` → `payment_complete()`
+- Raw SQL `DELETE FROM wp_posts` → safe uninstall (settings only)
+- Separate admin menu → WooCommerce → Settings → Payments
+- Deprecated `purchaseDate` → removed
+- `sokil/php-isocodes` dependency → eliminated (static currency map)
+- Currency hardcoded to `'132'` → auto-detect from order with fallback chain
 
 ### Official SISP Documentation
 
-Located at `KingSolomun79/vinti4-wp-plugin/vinti4docs/`. Key files:
-- `MOP021.013_Pagamento Web - Especificação de Serviço.pdf` — Main service spec
-- `Pagamento Web - Especificação do Protocolo de Segurança v2.0.pdf` — Security/fingerprint spec
-- `MD044.01_FAQs Migração Para o Protocolo 3DSServer 2.2.0.pdf` — 3DS migration guide
-- `nodejs-vinti4.md` — Node.js code example (fully readable, confirms fingerprint algorithm)
-- `Exemplo de Código em PHP.pdf` — PHP code example
-
-**Fingerprint algorithm (confirmed across all sources):**
-- Request: `SHA512(SHA512(posAutCode) + timestamp + amount*1000 + merchantRef + merchantSession + posID + currency + transactionCode [+ entityCode + referenceNumber])` → Base64
-- Response (success): Same pattern with additional fields (messageType, clearingPeriod, transactionID, pan, merchantResponse, etc.)
-- Amount in hash = integer amount × 1000
-- Timestamp format = `yyyy-MM-dd HH:mm:ss`
+Located at `KingSolomun79/vinti4-wp-plugin/vinti4docs/`.
 
 ### Sandbox Test Environment
 
@@ -132,7 +143,7 @@ Located at `KingSolomun79/vinti4-wp-plugin/vinti4docs/`. Key files:
 - **PHP 8.1+**: Target minimum PHP version
 - **WooCommerce Gateway API**: Must extend `WC_Payment_Gateway`, use `init_form_fields()`, `init_settings()`, `process_payment()`
 - **WooCommerce Blocks API**: Must register payment method via `AbstractPaymentMethodType`
-- **No Composer dependencies**: Legacy used `sokil/php-isocodes` for country codes — use WordPress/WooCommerce built-in functions or lightweight inline mapping instead
+- **No Composer dependencies**: Use WordPress/WooCommerce built-in functions or lightweight inline mapping
 - **SISP protocol compliance**: Fingerprint generation must follow exact SISP spec — field order, SHA-512, Base64, amount ×1000, timestamp format
 - **No raw SQL**: Must use WooCommerce order APIs and metadata (HPOS-safe)
 - **Currency**: Auto-detect from WooCommerce order currency, configurable default (CVE for Cape Verde)
@@ -141,15 +152,23 @@ Located at `KingSolomun79/vinti4-wp-plugin/vinti4docs/`. Key files:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Gateway ID: `vinti4` | PRD specifies stable string ID, not numeric | — Pending |
-| Hosted redirect flow (not API) | SISP uses redirect-based payment, not direct API | — Pending |
-| Currency auto-detect from order | Supports multiple markets (CVE default, AOA, etc.) | — Pending |
-| No Composer dependencies | Eliminate `sokil/php-isocodes`, use built-in WP/Woo functions | — Pending |
-| Settings in WooCommerce → Payments | Not separate top-level admin menu | — Pending |
-| purchaseRequest without `purchaseDate` | Deprecated by SISP per PRD section 15.9 | — Pending |
-| Use `payment_complete()` for order completion | WooCommerce handles stock reduction | — Pending |
-| Callback via `woocommerce_api_{gateway_id}` | Replace standalone PHP callback files | — Pending |
-| Build per PRD milestone order | Bootstrap → Gateway → Fingerprint → Redirect → Callback → Blocks → Logging → Tests | — Pending |
+| Gateway ID: `vinti4` | PRD specifies stable string ID, not numeric | ✓ Good |
+| Hosted redirect flow (not API) | SISP uses redirect-based payment, not direct API | ✓ Good |
+| Currency auto-detect from order | Supports multiple markets (CVE default, AOA, etc.) | ✓ Good |
+| No Composer dependencies | Eliminate `sokil/php-isocodes`, use built-in WP/Woo functions | ✓ Good |
+| Settings in WooCommerce → Payments | Not separate top-level admin menu | ✓ Good |
+| purchaseRequest without `purchaseDate` | Deprecated by SISP per PRD section 15.9 | ✓ Good |
+| Use `payment_complete()` for order completion | WooCommerce handles stock reduction | ✓ Good |
+| Callback via `woocommerce_api_{gateway_id}` | Replace standalone PHP callback files | ✓ Good |
+| Build per PRD milestone order | Bootstrap → Gateway → Fingerprint → Redirect → Callback → Blocks → Logging → Tests | ✓ Good |
+| `_vinti4_attempt_history` canonical key | Immutable audit trail, no destructive overwrites | ✓ Good |
+| Factory + Store split | Creation concerns separate from persistence/projection | ✓ Good |
+| Attempt-first callback resolution with legacy fallback | Multi-attempt support without breaking pre-v1.1 orders | ✓ Good |
+| Per-attempt idempotency via unique meta keys | Each attempt independently deduplicated | ✓ Good |
+| Outstanding threshold ≤ 0.01 for completion | Floating-point tolerance | ✓ Good |
+| HPOS dual registration for meta box | Both classic and HPOS order storage backends | ✓ Good |
+| Inline CSS for progress bar | Zero dependencies | ✓ Good |
+| Structured failure type logging | Distinguishable diagnostic categories | ✓ Good |
 
 ---
-*Last updated: 2026-04-17 after starting milestone v1.1*
+*Last updated: 2026-04-18 after v1.1 milestone completion*
