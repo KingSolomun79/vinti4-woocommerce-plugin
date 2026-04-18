@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** A shopper can select Vinti4 at WooCommerce checkout, be redirected securely to SISP's 3DS payment page, and return to a correctly-completed or correctly-failed order — every time, without fingerprint mismatches, duplicate completions, or fatal errors.
-**Current focus:** Phase 10 complete — admin partial request flow done
+**Current focus:** All phases complete — v1.1 milestone ready for audit
 
 ## Current Position
 
-Phase: 10 of 11 (Admin Partial Request Flow) — Complete
-Plan: 10-02 complete (phase finished)
-Status: Phase 10 complete — both plans done
-Last activity: 2026-04-18 — Completed 10-02 attempt history and diagnostics
+Phase: 10 of 11 (Admin Partial Request Flow) — Complete and Verified
+Plan: All plans complete
+Status: All phases verified (v1.1 milestone complete)
+Last activity: 2026-04-18 — Phase 10 verified with gap closure (9/9 truths)
 
 Progress: ██████████ 100%
 
@@ -118,6 +118,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 ### Pending Todos
 
 - PHP CLI is unavailable in the current execution environment; lint and PHPUnit verification for all phases must be rerun in a PHP-enabled environment.
+- Feature compatibility and admin test panel wiring were restored after being accidentally removed during Phase 9 — verify no other regressions exist.
 
 ### Blockers/Concerns
 
@@ -125,6 +126,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-18 06:36 UTC
-Stopped at: Completed 10-02-PLAN.md (Phase 10 complete)
+Last session: 2026-04-18 06:40 UTC
+Stopped at: Phase 10 verified complete — all phases done (v1.1 milestone)
 Resume file: None

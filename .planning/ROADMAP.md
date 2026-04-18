@@ -13,7 +13,7 @@ Milestone v1.1 extends the shipped v1.0 hosted-card flow with partial deposits a
 ## Phases
 
 - [x] **Phase 9: Attempt Foundation and Persistence** - Add attempt data model, generation, and append-only history on orders
-- [ ] **Phase 10: Admin Partial Request Flow** - Add dashboard/admin flow for selecting partial amount and sending new payment request attempts
+- [x] **Phase 10: Admin Partial Request Flow** - Add dashboard/admin flow for selecting partial amount and sending new payment request attempts
 - [x] **Phase 11: Callback Reconciliation and Compatibility Verification** - Resolve callback by attempt context, enforce per-attempt idempotency, and verify card-flow compatibility
 
 ## Phase Details
@@ -45,8 +45,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 10-01-PLAN.md — Create admin meta box with partial amount form, validation, AJAX attempt creation, and payment link generation
-- [ ] 10-02-PLAN.md — Add attempt history table, payment progress display, resend link functionality, and diagnostic test
+- [x] 10-01-PLAN.md — Create admin meta box with partial amount form, validation, AJAX attempt creation, and payment link generation
+- [x] 10-02-PLAN.md — Add attempt history table, payment progress display, resend link functionality, and diagnostic test
 
 ### Phase 11: Callback Reconciliation and Compatibility Verification
 **Goal**: Callbacks resolve and mutate state at attempt granularity while preserving existing card redirect behavior.
@@ -72,5 +72,5 @@ Phases execute in numeric order: 9 -> 10 -> 11
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 9. Attempt Foundation and Persistence | 2/2 | Complete | 2026-04-17 |
-| 10. Admin Partial Request Flow | 0/2 | Not started | - |
+| 10. Admin Partial Request Flow | 2/2 | Complete | 2026-04-18 |
 | 11. Callback Reconciliation and Compatibility Verification | 2/2 | Complete | 2026-04-18 |

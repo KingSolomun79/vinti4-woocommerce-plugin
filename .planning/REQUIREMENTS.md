@@ -16,14 +16,14 @@ Requirements for this milestone only (partial deposits and multi-attempt payment
 
 ### Partial Amount Rules
 
-- [ ] **PART-01**: Admin can request a partial payment using percentage and fixed amount modes
-- [ ] **PART-02**: Partial amount validation blocks invalid values (<= 0, > outstanding, malformed input)
-- [ ] **PART-03**: Outstanding balance is computed from successful paid attempts, not from last attempt only
+- [x] **PART-01**: Admin can request a partial payment using percentage and fixed amount modes
+- [x] **PART-02**: Partial amount validation blocks invalid values (<= 0, > outstanding, malformed input)
+- [x] **PART-03**: Outstanding balance is computed from successful paid attempts, not from last attempt only
 - [x] **PART-04**: A successful attempt updates paid/outstanding totals correctly at order level
 
 ### Request Delivery and Callback Resolution
 
-- [ ] **REQ-01**: Admin can send a payment request link/form for a specific attempt
+- [x] **REQ-01**: Admin can send a payment request link/form for a specific attempt
 - [x] **REQ-02**: Callback lookup resolves the exact attempt by attempt reference context before order mutation
 - [x] **REQ-03**: Idempotency guard is enforced per attempt (duplicate callback does not re-apply payment)
 - [x] **REQ-04**: Invalid reference/session/fingerprint for an attempt fails safely with diagnostic reason
@@ -79,11 +79,11 @@ Which phase covers which requirement. Updated during roadmap creation.
 | ATT-02 | Phase 9 | Complete |
 | ATT-03 | Phase 9 | Complete |
 | ATT-04 | Phase 9 | Complete |
-| PART-01 | Phase 10 | Pending |
-| PART-02 | Phase 10 | Pending |
-| PART-03 | Phase 10 | Pending |
+| PART-01 | Phase 10 | Complete |
+| PART-02 | Phase 10 | Complete |
+| PART-03 | Phase 10 | Complete |
 | PART-04 | Phase 11 | Complete |
-| REQ-01 | Phase 10 | Pending |
+| REQ-01 | Phase 10 | Complete |
 | REQ-02 | Phase 11 | Complete |
 | REQ-03 | Phase 11 | Complete |
 | REQ-04 | Phase 11 | Complete |
@@ -99,4 +99,4 @@ Which phase covers which requirement. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-17*
-*Last updated: 2026-04-17 after Phase 9 completion and verification*
+*Last updated: 2026-04-18 after Phase 10 completion and verification*
