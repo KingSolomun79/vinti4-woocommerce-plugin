@@ -50,8 +50,13 @@ function vinti4_init() {
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-attempt-store.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-redirect-form.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-callback-handler.php';
-	// Phase 7: require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
+	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-logger.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-wc-vinti4-blocks-support.php';
+	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-partial-payment.php';
+
+	if ( is_admin() ) {
+		Vinti4_Admin_Partial_Payment::register();
+	}
 
 	// Register the vinti4-payment rewrite endpoint.
 	add_action( 'init', 'vinti4_add_rewrite_rules' );
