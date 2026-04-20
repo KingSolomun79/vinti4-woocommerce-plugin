@@ -78,6 +78,7 @@ Go to **WooCommerce → Settings → Payments → Vinti4 → Manage**.
 | **POS Auth Code** | Authentication code from SISP. Special characters (`%`, `+`, `/`, `=`) are preserved exactly as entered | (empty) |
 | **SISP Payment URL** | URL of the SISP 3DS payment page. Use the test URL for sandbox mode | `https://3dsteste.vinti4net.cv/...` (sandbox) |
 | **Language** | Language for the SISP payment page | Portuguese |
+| **Order Status After Payment** | Status to set on the order after a successful payment. Choose "Completed" for virtual/downloadable products or "Processing" for physical goods | Processing |
 | **Debug Mode** | Enable logging for debugging. **Do not enable in production.** | Off |
 | **Default Currency** | Currency used when auto-detection from the order is not possible | CVE — Cape Verdean Escudo |
 
@@ -249,7 +250,7 @@ These are the tests you perform yourself in the browser to verify the complete p
 **Purpose:** All settings render correctly and save properly.
 
 1. Go to **WooCommerce → Settings → Payments → Vinti4 → Manage**
-2. Verify all fields are present: Enable, Title, Description, POS ID, POS Auth Code, SISP Payment URL, Language, Debug, Default Currency
+2. Verify all fields are present: Enable, Title, Description, POS ID, POS Auth Code, SISP Payment URL, Language, Order Status After Payment, Debug, Default Currency
 3. Fill in POS ID, POS Auth Code, and leave SISP Payment URL as sandbox default
 4. Click **Save changes**
 5. Verify settings persist after page reload
@@ -318,7 +319,7 @@ These are the tests you perform yourself in the browser to verify the complete p
 3. Submit the payment
 4. You should be redirected back to the WooCommerce **Order Received** page
 5. In **WordPress Admin → WooCommerce → Orders**, find the order:
-   - Status should be **Processing** (or Completed depending on your settings)
+   - Status should be **Processing** (default) or **Completed** (if the "Order Status After Payment" setting is set to "Completed")
    - Order notes should show: *"Vinti4 payment authorized. TID: ..."*
    - No duplicate order notes (callback was processed once)
 
