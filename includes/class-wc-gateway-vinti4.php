@@ -127,6 +127,17 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 				'default'     => 'no',
 				'desc_tip'    => true,
 			),
+			'order_status_after_payment' => array(
+				'title'       => __( 'Order Status After Payment', 'vinti4' ),
+				'type'        => 'select',
+				'description' => __( 'Status to set on the WooCommerce order after a successful payment. "Completed" is useful for stores selling virtual or downloadable products.', 'vinti4' ),
+				'default'     => 'processing',
+				'options'     => array(
+					'processing' => __( 'Processing', 'vinti4' ),
+					'completed'  => __( 'Completed', 'vinti4' ),
+				),
+				'desc_tip'    => true,
+			),
 			'currency_default' => array(
 				'title'       => __( 'Default Currency', 'vinti4' ),
 				'type'        => 'select',

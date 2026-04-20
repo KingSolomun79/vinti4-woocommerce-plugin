@@ -483,6 +483,11 @@ class Vinti4_Callback_Handler {
 			if ( $outstanding_total <= 0.01 ) {
 				// Fully paid — complete the order.
 				$order->payment_complete( $transaction_id );
+
+				if ( 'completed' === $gateway->get_option( 'order_status_after_payment', 'processing' ) ) {
+					$order->update_status( 'completed' );
+				}
+
 				$order->add_order_note(
 					sprintf(
 						/* translators: %s: SISP transaction ID */
@@ -666,6 +671,11 @@ class Vinti4_Callback_Handler {
 
 			// Complete the order (legacy path — always full payment for single-attempt orders).
 			$order->payment_complete( $transaction_id );
+
+			if ( 'completed' === $gateway->get_option( 'order_status_after_payment', 'processing' ) ) {
+				$order->update_status( 'completed' );
+			}
+
 			self::log_callback_outcome(
 				$order,
 				array(
