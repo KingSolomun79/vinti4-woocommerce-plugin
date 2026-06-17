@@ -33,11 +33,72 @@ if ( class_exists( 'Vinti4_Callback_Handler' ) ) {
  * 6. On success: validate response fingerprint
  * 7. On success: validate amount against attempt context
  * 8. On success: mark attempt completed and handle partial/full payment
- * 9. On failure: mark attempt failed and order status
+ * 9. On failure: restore cart, show notice, mark attempt failed, redirect
  *
  * @since 1.0.0
  */
 class Vinti4_Callback_Handler {
+
+	/**
+	 * Resolve the failure redirect URL from gateway settings.
+	 *
+	 * Returns the admin-configured failure redirect URL if set and valid,
+	 * otherwise falls back to the WooCommerce checkout URL.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WC_Gateway_Vinti4 $gateway Gateway instance.
+	 * @return string Redirect URL.
+	 */
+	private static function get_failure_redirect_url( WC_Gateway_Vinti4 $gateway ): string {
+		$redirect = $gateway->get_option( 'redirect_url_failure', '' );
+
+		if ( ! empty( $redirect ) && filter_var( $redirect, FILTER_VALIDATE_URL ) ) {
+			return esc_url_raw( $redirect );
+		}
+
+		return wc_get_checkout_url();
+	}
+
+	/**
+	 * Restore WooCommerce cart contents from a failed order.
+	 *
+	 * WooCommerce empties the cart during checkout when process_payment() returns
+	 * 'success'. If the payment subsequently fails at the gateway, the cart is gone.
+	 * This method repopulates the cart from the order's line items so the customer
+	 * can retry without having to re-add items manually.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WC_Order $order Failed order to restore cart from.
+	 * @return void
+	 */
+	private static function restore_cart_from_order( WC_Order $order ): void {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return;
+		}
+
+		WC()->cart->empty_cart( false );
+
+		foreach ( $order->get_items() as $item ) {
+			$product_id   = $item->get_product_id();
+			$quantity     = $item->get_quantity();
+			$variation_id = $item->get_variation_id();
+			$product      = wc_get_product( $variation_id ? $variation_id : $product_id );
+
+			if ( $product && $product->is_purchasable() && $product->is_in_stock() ) {
+				$cart_item_data = array();
+
+				if ( $variation_id ) {
+					$cart_item_data['variation'] = $item->get_meta_data();
+				}
+
+				WC()->cart->add_to_cart( $product_id, $quantity, $variation_id, $item->get_all_formatted_meta_data(), $cart_item_data );
+			}
+		}
+
+		WC()->cart->calculate_totals();
+	}
 
 	/**
 	 * Log a callback outcome with attempt-scoped context.
@@ -353,6 +414,7 @@ class Vinti4_Callback_Handler {
 	 *
 	 * Validates per-attempt idempotency, merchantSession, fingerprint, and amount.
 	 * On success, marks the attempt completed and handles partial/full payment.
+	 * On failure, restores the cart and redirects to the failure URL.
 	 *
 	 * @since 1.1.0
 	 *
@@ -384,8 +446,9 @@ class Vinti4_Callback_Handler {
 		string $error_detail,
 		string $error_description
 	): void {
-		$attempt_id  = $attempt['attempt_id'] ?? 'unknown';
+		$attempt_id   = $attempt['attempt_id'] ?? 'unknown';
 		$merchant_ref = $attempt['merchant_ref'] ?? '';
+		$failure_url  = self::get_failure_redirect_url( $gateway );
 
 		// Per-attempt idempotency check.
 		$processed_meta_key = "_vinti4_attempt_{$attempt_id}_processed";
@@ -412,7 +475,9 @@ class Vinti4_Callback_Handler {
 			);
 			Vinti4_Attempt_Store::mark_attempt_failed( $order, $attempt_id, 'merchantSession mismatch' );
 			$order->update_status( 'failed', __( 'Vinti4 callback session validation failed.', 'vinti4' ) );
-			self::mark_attempt_processed_and_redirect( $order, $attempt_id, wc_get_checkout_url() );
+			self::restore_cart_from_order( $order );
+			wc_add_notice( __( 'Payment failed due to a session error. Please try again.', 'vinti4' ), 'error' );
+			self::mark_attempt_processed_and_redirect( $order, $attempt_id, $failure_url );
 		}
 
 		// Determine success vs failure.
@@ -448,7 +513,9 @@ class Vinti4_Callback_Handler {
 				);
 				Vinti4_Attempt_Store::mark_attempt_failed( $order, $attempt_id, 'fingerprint mismatch' );
 				$order->update_status( 'failed', __( 'Vinti4 fingerprint validation failed.', 'vinti4' ) );
-				self::mark_attempt_processed_and_redirect( $order, $attempt_id, wc_get_checkout_url() );
+				self::restore_cart_from_order( $order );
+				wc_add_notice( __( 'Payment verification failed. Please try again.', 'vinti4' ), 'error' );
+				self::mark_attempt_processed_and_redirect( $order, $attempt_id, $failure_url );
 			}
 
 			// Validate amount against attempt context.
@@ -464,12 +531,14 @@ class Vinti4_Callback_Handler {
 				);
 				Vinti4_Attempt_Store::mark_attempt_failed( $order, $attempt_id, 'amount mismatch' );
 				$order->update_status( 'failed', __( 'Vinti4 amount mismatch.', 'vinti4' ) );
-				self::mark_attempt_processed_and_redirect( $order, $attempt_id, wc_get_checkout_url() );
+				self::restore_cart_from_order( $order );
+				wc_add_notice( __( 'Payment amount verification failed. Please try again.', 'vinti4' ), 'error' );
+				self::mark_attempt_processed_and_redirect( $order, $attempt_id, $failure_url );
 			}
 
 			// Mark attempt completed and compute totals.
 			Vinti4_Attempt_Store::mark_attempt_completed( $order, $attempt_id, $transaction_id );
-			$paid_total       = Vinti4_Attempt_Store::get_paid_total( $order );
+			$paid_total        = Vinti4_Attempt_Store::get_paid_total( $order );
 			$outstanding_total = Vinti4_Attempt_Store::get_outstanding_total( $order );
 
 			self::log_callback_outcome(
@@ -549,7 +618,9 @@ class Vinti4_Callback_Handler {
 				$error_description
 			)
 		);
-		self::mark_attempt_processed_and_redirect( $order, $attempt_id, wc_get_checkout_url() );
+		self::restore_cart_from_order( $order );
+		wc_add_notice( __( 'Payment was declined. Please try again or use a different payment method.', 'vinti4' ), 'error' );
+		self::mark_attempt_processed_and_redirect( $order, $attempt_id, $failure_url );
 	}
 
 	/**
@@ -588,6 +659,8 @@ class Vinti4_Callback_Handler {
 		string $error_detail,
 		string $error_description
 	): void {
+		$failure_url = self::get_failure_redirect_url( $gateway );
+
 		// Validate merchantRef matches stored meta (legacy).
 		$stored_ref = $order->get_meta( '_vinti4_merchant_ref' );
 
@@ -651,7 +724,9 @@ class Vinti4_Callback_Handler {
 					sprintf( 'Legacy order, messageType: %s', $message_type )
 				);
 				$order->update_status( 'failed', __( 'Vinti4 fingerprint validation failed.', 'vinti4' ) );
-				self::mark_processed_and_redirect( $order, wc_get_checkout_url() );
+				self::restore_cart_from_order( $order );
+				wc_add_notice( __( 'Payment verification failed. Please try again.', 'vinti4' ), 'error' );
+				self::mark_processed_and_redirect( $order, $failure_url );
 			}
 
 			// Validate amount (legacy — uses order-level meta).
@@ -666,7 +741,9 @@ class Vinti4_Callback_Handler {
 					sprintf( 'Legacy order, Stored: %d, Response: %d', $stored_amount, $response_amount )
 				);
 				$order->update_status( 'failed', __( 'Vinti4 amount mismatch.', 'vinti4' ) );
-				self::mark_processed_and_redirect( $order, wc_get_checkout_url() );
+				self::restore_cart_from_order( $order );
+				wc_add_notice( __( 'Payment amount verification failed. Please try again.', 'vinti4' ), 'error' );
+				self::mark_processed_and_redirect( $order, $failure_url );
 			}
 
 			// Complete the order (legacy path — always full payment for single-attempt orders).
@@ -713,7 +790,9 @@ class Vinti4_Callback_Handler {
 				$error_description
 			)
 		);
-		self::mark_processed_and_redirect( $order, wc_get_checkout_url() );
+		self::restore_cart_from_order( $order );
+		wc_add_notice( __( 'Payment was declined. Please try again or use a different payment method.', 'vinti4' ), 'error' );
+		self::mark_processed_and_redirect( $order, $failure_url );
 	}
 
 	/**

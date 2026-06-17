@@ -47,7 +47,8 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 		$this->vbv2_url         = $this->get_option( 'vbv2_url' );
 		$this->language         = $this->get_option( 'language' );
 		$this->debug            = $this->get_option( 'debug' );
-		$this->currency_default = $this->get_option( 'currency_default' );
+		$this->currency_default    = $this->get_option( 'currency_default' );
+		$this->redirect_url_failure = $this->get_option( 'redirect_url_failure' );
 
 		// Initialize logger with gateway settings.
 		Vinti4_Logger::init( $this );
@@ -149,6 +150,14 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 					'USD' => __( 'USD — US Dollar', 'vinti4' ),
 				),
 				'desc_tip'    => true,
+			),
+			'redirect_url_failure' => array(
+				'title'       => __( 'Failure Redirect URL', 'vinti4' ),
+				'type'        => 'text',
+				'description' => __( 'URL to redirect customers to when a payment fails. Leave empty to use the default checkout page. The cart will be restored so the customer can retry.', 'vinti4' ),
+				'default'     => '',
+				'desc_tip'    => true,
+				'placeholder' => esc_url( wc_get_checkout_url() ),
 			),
 		);
 	}
