@@ -120,6 +120,9 @@ class Test_Redirect_Form extends TestCase {
 		$this->assertSame( 'en', $inputs['languageMessages'] ?? null );
 		$this->assertSame( 'http://example.com/wc-api/vinti4', $inputs['urlMerchantResponse'] ?? null );
 		$this->assertSame( '1', $inputs['is3DSec'] ?? null );
+		$this->assertSame( 'fingerprint-base64', $inputs['FingerPrint'] ?? null );
+		$this->assertSame( '2026-04-16 21:15:00', $inputs['TimeStamp'] ?? null );
+		$this->assertSame( '1', $inputs['FingerPrintVersion'] ?? null );
 		$this->assertArrayNotHasKey( 'posAuthCode', $inputs );
 		$this->assertArrayNotHasKey( 'lang', $inputs );
 		$this->assertStringNotContainsString( 'TOPSECRET123', $html );

@@ -172,3 +172,113 @@ function vinti4_shape_phone( string $phone ): array {
 function vinti4_is_success_message_type( string $message_type ): bool {
 	return in_array( $message_type, array( '8', '10', 'M', 'P' ), true );
 }
+
+if ( ! function_exists( 'vinti4_config_value' ) ) {
+	/**
+	 * Resolve a Vinti4 config fallback from a WP constant, environment variable, or default.
+	 *
+	 * Priority:
+	 * 1. PHP constant, e.g. VINTI4_DEFAULT_BILL_CITY
+	 * 2. Environment variable, e.g. getenv('VINTI4_DEFAULT_BILL_CITY')
+	 * 3. Supplied default
+	 *
+	 * @param string $key     Constant/env var name.
+	 * @param string $default Default fallback.
+	 * @return string
+	 */
+	function vinti4_config_value( string $key, string $default = '' ): string {
+		if ( defined( $key ) ) {
+			$value = constant( $key );
+
+			if ( is_scalar( $value ) && '' !== trim( (string) $value ) ) {
+				return trim( (string) $value );
+			}
+		}
+
+		$env_value = getenv( $key );
+
+		if ( is_scalar( $env_value ) && false !== $env_value && '' !== trim( (string) $env_value ) ) {
+			return trim( (string) $env_value );
+		}
+
+		return $default;
+	}
+}
+
+if ( ! function_exists( 'vinti4_order_date_ymd' ) ) {
+	/**
+	 * Format a WooCommerce date object as yyyyMMdd.
+	 *
+	 * @param WC_DateTime|null $date     WooCommerce date.
+	 * @param string           $fallback Fallback yyyyMMdd.
+	 * @return string
+	 */
+	function vinti4_order_date_ymd( $date, string $fallback = '' ): string {
+		if ( $date instanceof WC_DateTime ) {
+			return $date->date_i18n( 'Ymd' );
+		}
+
+		return '' !== $fallback ? $fallback : gmdate( 'Ymd' );
+	}
+}
+
+if ( ! function_exists( 'vinti4_shape_phone_with_fallback' ) ) {
+	/**
+	 * Shape customer phone into SISP phone format, using configured fallback when missing.
+	 *
+	 * @param string $phone           Raw WooCommerce phone.
+	 * @param string $billing_country WooCommerce billing country, e.g. CV.
+	 * @return array{cc:string, subscriber:string}
+	 */
+	function vinti4_shape_phone_with_fallback( string $phone, string $billing_country = '' ): array {
+		$fallback_cc = vinti4_config_value( 'VINTI4_DEFAULT_PHONE_CC', '238' );
+		$fallback_subscriber = vinti4_config_value( 'VINTI4_DEFAULT_PHONE_SUBSCRIBER', '9884189' );
+
+		$billing_country = strtoupper( trim( $billing_country ) );
+
+		$digits = preg_replace( '/\D/', '', $phone );
+		if ( 'CV' === $billing_country || '' === $billing_country || str_starts_with( $digits, '238' ) ) {
+			if ( str_starts_with( $digits, '238' ) && strlen( $digits ) === 10 ) {
+				$phone = substr( $digits, 3 );
+			} elseif ( str_starts_with( $digits, '00238' ) && strlen( $digits ) === 12 ) {
+				$phone = substr( $digits, 5 );
+			}
+		}
+
+		$shaped = vinti4_shape_phone( $phone );
+
+		if ( empty( $shaped['subscriber'] ) ) {
+			return array(
+				'cc'         => $fallback_cc,
+				'subscriber' => $fallback_subscriber,
+			);
+		}
+
+		if ( empty( $shaped['cc'] ) ) {
+			if ( 'CV' === $billing_country || '' === $billing_country ) {
+				$shaped['cc'] = $fallback_cc;
+			}
+		}
+
+		return array(
+			'cc'         => preg_replace( '/\D/', '', (string) $shaped['cc'] ),
+			'subscriber' => preg_replace( '/\D/', '', (string) $shaped['subscriber'] ),
+		);
+	}
+}
+
+if ( ! function_exists( 'vinti4_non_empty_or_fallback' ) ) {
+	/**
+	 * Return primary value if non-empty, otherwise fallback.
+	 *
+	 * @param string $value    Primary value.
+	 * @param string $fallback Fallback value.
+	 * @return string
+	 */
+	function vinti4_non_empty_or_fallback( string $value, string $fallback ): string {
+		$value = trim( $value );
+
+		return '' !== $value ? $value : $fallback;
+	}
+}
+

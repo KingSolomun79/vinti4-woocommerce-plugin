@@ -65,8 +65,15 @@ class Vinti4_Request_Builder {
 		$merchant_session = self::resolve_context_string( $attempt_context, 'merchant_session', vinti4_build_merchant_session() );
 		$transaction_code = '1'; // Authorization.
 		$amount           = (string) vinti4_normalize_amount( self::resolve_attempt_amount( $order, $attempt_context ) );
-		$currency         = $gateway->get_currency_code( $order );
-		$language_messages = self::resolve_language_messages( (string) $gateway->language );
+		$currency         = '132';
+		
+		$language_messages = vinti4_config_value( 'VINTI4_DEFAULT_LANGUAGE_MESSAGES', 'en' );
+		$language_messages = strtolower( trim( $language_messages ) );
+
+		if ( ! in_array( $language_messages, array( 'en', 'pt' ), true ) ) {
+			$language_messages = 'en';
+		}
+		
 		$url_merchant_response = self::build_url_merchant_response();
 		$is_3dsec = '1';
 		$fingerprint_version = '1';
@@ -75,6 +82,15 @@ class Vinti4_Request_Builder {
 		$purchase_request_b64  = base64_encode(
 			wp_json_encode( $purchase_request_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES )
 		);
+
+		if ( isset( $gateway->debug ) && 'yes' === $gateway->debug ) {
+			Vinti4_Logger::log(
+				'Vinti4 purchaseRequest decoded JSON: ' . wp_json_encode(
+					$purchase_request_json,
+					JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+				)
+			);
+		}
 
 		$fingerprint = Vinti4_Fingerprint::build_request_fingerprint(
 			$gateway->pos_auth_code,
@@ -244,52 +260,99 @@ class Vinti4_Request_Builder {
 	 * @return array Associative array ready for JSON encoding.
 	 */
 	private static function build_purchase_request_json( WC_Order $order ): array {
-		$billing_phone  = vinti4_shape_phone( $order->get_billing_phone() );
+		$email = strtolower( trim( $order->get_billing_email() ) );
 
-		// Determine address match: billing vs shipping.
-		$addr_match = (
-			trim( $order->get_billing_address_1() ) === trim( $order->get_shipping_address_1() )
-			&& trim( $order->get_billing_city() ) === trim( $order->get_shipping_city() )
-			&& trim( $order->get_billing_postcode() ) === trim( $order->get_shipping_postcode() )
-			&& trim( $order->get_billing_country() ) === trim( $order->get_shipping_country() )
-		) ? 'Y' : 'N';
+		if ( '' === $email ) {
+			throw new RuntimeException( 'Vinti4 payment requires a customer billing email for 3DS purchaseRequest.' );
+		}
 
-		// Account info — best-effort from WC data.
-		$customer_id      = $order->get_customer_id();
-		$ch_acc_age_ind   = ( $customer_id > 0 ) ? '05' : '01';
+		$today = gmdate( 'Ymd' );
+
+		$created_date = vinti4_order_date_ymd(
+			$order->get_date_created(),
+			$today
+		);
+
+		$changed_date = vinti4_order_date_ymd(
+			$order->get_date_modified(),
+			$created_date
+		);
+
+		$default_city = vinti4_config_value(
+			'VINTI4_DEFAULT_BILL_CITY',
+			'Praia'
+		);
+
+		$default_country = vinti4_config_value(
+			'VINTI4_DEFAULT_BILL_COUNTRY_NUMERIC',
+			'132'
+		);
+
+		$default_line1 = vinti4_config_value(
+			'VINTI4_DEFAULT_BILL_LINE1',
+			'São Pedro Bay booking payment'
+		);
+
+		$default_postcode = vinti4_config_value(
+			'VINTI4_DEFAULT_BILL_POSTCODE',
+			'0000'
+		);
+
+		$billing_city = vinti4_non_empty_or_fallback(
+			$order->get_billing_city(),
+			$default_city
+		);
+
+		$billing_country = $default_country;
+
+		$billing_line1 = vinti4_non_empty_or_fallback(
+			$order->get_billing_address_1(),
+			$default_line1
+		);
+
+		$billing_line2_raw = trim( $order->get_billing_address_2() );
+		$billing_line2 = '' !== $billing_line2_raw ? $billing_line2_raw : $billing_line1;
+
+		$billing_postcode = vinti4_non_empty_or_fallback(
+			$order->get_billing_postcode(),
+			$default_postcode
+		);
+
+		$phone = vinti4_shape_phone_with_fallback(
+			$order->get_billing_phone(),
+			$order->get_billing_country()
+		);
 
 		return array(
-			'acctID'          => (string) $customer_id,
-			'email'           => trim( $order->get_billing_email() ),
-			'addrMatch'       => $addr_match,
-			// Billing address block.
-			'billAddrCity'    => trim( $order->get_billing_city() ),
-			'billAddrCountry' => trim( $order->get_billing_country() ),
-			'billAddrLine1'   => trim( $order->get_billing_address_1() ),
-			'billAddrLine2'   => trim( $order->get_billing_address_2() ),
-			'billAddrLine3'   => '',
-			'billAddrPostCode'=> trim( $order->get_billing_postcode() ),
-			'billAddrState'   => trim( $order->get_billing_state() ),
-			// Shipping address block.
-			'shipAddrCity'    => trim( $order->get_shipping_city() ),
-			'shipAddrCountry' => trim( $order->get_shipping_country() ),
-			'shipAddrLine1'   => trim( $order->get_shipping_address_1() ),
-			'shipAddrPostCode'=> trim( $order->get_shipping_postcode() ),
-			'shipAddrState'   => trim( $order->get_shipping_state() ),
-			// Phone block.
-			'workPhone'       => array(
-				'cc'         => $billing_phone['cc'],
-				'subscriber' => $billing_phone['subscriber'],
+			'acctID' => $email,
+
+			'acctInfo' => array(
+				'chAccAgeInd'           => '02',
+				'chAccChange'           => $changed_date,
+				'chAccDate'             => $created_date,
+				'chAccPwChange'         => $created_date,
+				'chAccPwChangeInd'      => '02',
+				'suspiciousAccActivity' => '01',
 			),
-			'mobilePhone'     => array(
-				'cc'         => $billing_phone['cc'],
-				'subscriber' => $billing_phone['subscriber'],
-			),
-			// Account info block.
-			'acctInfo'        => array(
-				'chAccAgeInd' => $ch_acc_age_ind,
-				'chAccDate'   => '',
-			),
+
+			'email' => $email,
+
+			'addrMatch' => 'Y',
+
+			'billAddrCity'     => $billing_city,
+			'billAddrCountry'  => $billing_country,
+			'billAddrLine1'    => $billing_line1,
+			'billAddrLine2'    => $billing_line2,
+			'billAddrLine3'    => '',
+			'billAddrPostCode' => $billing_postcode,
+
+			'shipAddrCity'     => $billing_city,
+			'shipAddrCountry'  => $billing_country,
+			'shipAddrLine1'    => $billing_line1,
+			'shipAddrPostCode' => $billing_postcode,
+
+			'workPhone'   => $phone,
+			'mobilePhone' => $phone,
 		);
 	}
 }

@@ -235,6 +235,18 @@ class WC_Gateway_Vinti4 extends WC_Payment_Gateway {
 			);
 		}
 
+		if ( '' === trim( $order->get_billing_email() ) ) {
+			wc_add_notice(
+				__( 'A billing email is required to process this card payment. Please contact support.', 'vinti4' ),
+				'error'
+			);
+
+			return array(
+				'result'   => 'failure',
+				'redirect' => '',
+			);
+		}
+
 		$attempt = $this->create_payment_attempt( $order, (float) $order->get_total(), array( 'source' => 'checkout' ) );
 		Vinti4_Attempt_Store::append_attempt( $order, $attempt, true );
 

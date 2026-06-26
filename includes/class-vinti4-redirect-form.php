@@ -222,7 +222,6 @@ class Vinti4_Redirect_Form {
 
 		// Required fields from gateway settings.
 		echo '<input type="hidden" name="posID" value="' . esc_attr( $gateway->pos_id ) . '">';
-		echo '<input type="hidden" name="posAuthCode" value="' . esc_attr( $gateway->pos_auth_code ) . '">';
 
 		// Required fields from order meta.
 		echo '<input type="hidden" name="merchantRef" value="' . esc_attr( $merchant_ref ) . '">';
@@ -230,15 +229,13 @@ class Vinti4_Redirect_Form {
 		echo '<input type="hidden" name="amount" value="' . esc_attr( $amount ) . '">';
 		echo '<input type="hidden" name="currency" value="' . esc_attr( $currency ) . '">';
 		echo '<input type="hidden" name="transactionCode" value="' . esc_attr( $transaction_code ) . '">';
-		echo '<input type="hidden" name="fingerprint" value="' . esc_attr( $fingerprint ) . '">';
-		echo '<input type="hidden" name="timestamp" value="' . esc_attr( $timestamp ) . '">';
+		echo '<input type="hidden" name="FingerPrint" value="' . esc_attr( $fingerprint ) . '">';
+		echo '<input type="hidden" name="TimeStamp" value="' . esc_attr( $timestamp ) . '">';
+		echo '<input type="hidden" name="FingerPrintVersion" value="' . esc_attr( $fingerprint_version ) . '">';
 		echo '<input type="hidden" name="purchaseRequest" value="' . esc_attr( $purchase_request_b64 ) . '">';
 		echo '<input type="hidden" name="languageMessages" value="' . esc_attr( $language_messages ) . '">';
 		echo '<input type="hidden" name="urlMerchantResponse" value="' . esc_attr( $url_merchant_response ) . '">';
 		echo '<input type="hidden" name="is3DSec" value="' . esc_attr( $is_3dsec ) . '">';
-
-		// Language.
-		echo '<input type="hidden" name="lang" value="' . esc_attr( $gateway->language ) . '">';
 
 		// Application identifiers (from SISP spec).
 		echo '<input type="hidden" name="appCode" value="VINTI4WOO">';

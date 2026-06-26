@@ -163,4 +163,48 @@ class Test_Formatting_Helpers extends TestCase {
 		$this->assertFalse( vinti4_is_success_message_type( '' ) );
 		$this->assertFalse( vinti4_is_success_message_type( '8.0' ) );
 	}
+
+	// ─── vinti4_config_value ─────────────────────────────────────────────────
+
+	public function test_config_value_constant_has_priority(): void {
+		define( 'VINTI4_TEST_CONST_A', 'from_constant' );
+		putenv( 'VINTI4_TEST_CONST_A=from_env' );
+
+		$this->assertSame( 'from_constant', vinti4_config_value( 'VINTI4_TEST_CONST_A', 'default' ) );
+	}
+
+	public function test_config_value_env_fallback(): void {
+		putenv( 'VINTI4_TEST_CONST_B=from_env' );
+
+		$this->assertSame( 'from_env', vinti4_config_value( 'VINTI4_TEST_CONST_B', 'default' ) );
+	}
+
+	public function test_config_value_default(): void {
+		$this->assertSame( 'default', vinti4_config_value( 'VINTI4_TEST_CONST_C', 'default' ) );
+	}
+
+	// ─── vinti4_shape_phone_with_fallback ────────────────────────────────────
+
+	public function test_shape_phone_with_fallback_woo_overrides(): void {
+		$result = vinti4_shape_phone_with_fallback( '+238 991 23 45', 'CV' );
+		$this->assertSame( '238', $result['cc'] );
+		$this->assertSame( '9912345', $result['subscriber'] );
+	}
+
+	public function test_shape_phone_with_fallback_missing_cc_uses_default(): void {
+		putenv( 'VINTI4_DEFAULT_PHONE_CC=238' );
+		
+		$result = vinti4_shape_phone_with_fallback( '12345', 'CV' );
+		$this->assertSame( '238', $result['cc'] );
+		$this->assertSame( '12345', $result['subscriber'] );
+	}
+
+	public function test_shape_phone_with_fallback_empty_phone_uses_both_defaults(): void {
+		putenv( 'VINTI4_DEFAULT_PHONE_CC=238' );
+		putenv( 'VINTI4_DEFAULT_PHONE_SUBSCRIBER=9884189' );
+
+		$result = vinti4_shape_phone_with_fallback( '', '' );
+		$this->assertSame( '238', $result['cc'] );
+		$this->assertSame( '9884189', $result['subscriber'] );
+	}
 }

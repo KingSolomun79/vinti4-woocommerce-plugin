@@ -61,6 +61,8 @@ class Test_Request_Builder extends TestCase {
 			public function get_shipping_postcode() { return '7600'; }
 			public function get_shipping_state() { return 'Santiago'; }
 			public function get_customer_id() { return 77; }
+			public function get_date_created() { return null; }
+			public function get_date_modified() { return null; }
 		};
 	}
 
@@ -73,7 +75,7 @@ class Test_Request_Builder extends TestCase {
 		$this->assertArrayHasKey( 'timeStamp', $attempt );
 		$this->assertArrayHasKey( 'FingerPrint', $attempt );
 		$this->assertArrayHasKey( 'FingerPrintVersion', $attempt );
-		$this->assertSame( 'pt', $attempt['languageMessages'] );
+		$this->assertSame( 'en', $attempt['languageMessages'] );
 		$this->assertSame( 'http://example.com/wc-api/vinti4', $attempt['urlMerchantResponse'] );
 		$this->assertSame( '1', $attempt['is3DSec'] );
 		$this->assertSame( '1', $attempt['FingerPrintVersion'] );
@@ -91,13 +93,13 @@ class Test_Request_Builder extends TestCase {
 		$this->assertSame( 'en', $attempt['languageMessages'] );
 	}
 
-	public function test_build_payment_attempt_defaults_language_messages_to_portuguese(): void {
+	public function test_build_payment_attempt_defaults_language_messages_to_english(): void {
 		$GLOBALS['mock_wp_determine_locale'] = 'fr_FR';
 		$GLOBALS['mock_wp_get_locale']       = 'es_ES';
 
 		$attempt = Vinti4_Request_Builder::build_payment_attempt( $this->create_order(), $this->create_gateway( 'invalid' ) );
 
-		$this->assertSame( 'pt', $attempt['languageMessages'] );
+		$this->assertSame( 'en', $attempt['languageMessages'] );
 	}
 
 	public function test_build_payment_attempt_normalizes_relative_callback_url_to_absolute_home_url(): void {
@@ -129,5 +131,46 @@ class Test_Request_Builder extends TestCase {
 		$this->assertSame( '50', $attempt_low_amount['amount'] );
 		$this->assertSame( '75', $attempt_high_amount['amount'] );
 		$this->assertNotSame( $attempt_low_amount['fingerprint'], $attempt_high_amount['fingerprint'] );
+	}
+
+	public function test_build_payment_attempt_generates_valid_purchase_request(): void {
+		$attempt = Vinti4_Request_Builder::build_payment_attempt( $this->create_order(), $this->create_gateway( 'pt' ) );
+		
+		$this->assertArrayHasKey( 'purchase_request_b64', $attempt );
+		$json = base64_decode( $attempt['purchase_request_b64'] );
+		$data = json_decode( $json, true );
+		
+		$this->assertIsArray( $data );
+		$this->assertSame( 'shopper@example.com', $data['email'] );
+		$this->assertSame( 'shopper@example.com', $data['acctID'] );
+		$this->assertSame( 'Praia', $data['billAddrCity'] );
+		$this->assertSame( '132', $data['billAddrCountry'] );
+		$this->assertSame( 'Palmarejo', $data['billAddrLine1'] );
+		$this->assertSame( 'Apt 2', $data['billAddrLine2'] );
+		$this->assertSame( '7600', $data['billAddrPostCode'] );
+		$this->assertSame( '238', $data['mobilePhone']['cc'] );
+		$this->assertSame( '9911223', $data['mobilePhone']['subscriber'] );
+		$this->assertArrayNotHasKey( 'purchaseDate', $data );
+		$this->assertArrayNotHasKey( 'entityCode', $data );
+		$this->assertArrayNotHasKey( 'referenceNumber', $data );
+	}
+
+	public function test_build_payment_attempt_throws_exception_on_missing_email(): void {
+		$order = new class extends WC_Order {
+			public function get_id() { return 42; }
+			public function get_total() { return 123.45; }
+			public function get_billing_email() { return ''; }
+			public function get_billing_phone() { return ''; }
+			public function get_billing_city() { return ''; }
+			public function get_billing_country() { return ''; }
+			public function get_billing_address_1() { return ''; }
+			public function get_billing_address_2() { return ''; }
+			public function get_billing_postcode() { return ''; }
+			public function get_date_created() { return null; }
+			public function get_date_modified() { return null; }
+		};
+
+		$this->expectException( RuntimeException::class );
+		Vinti4_Request_Builder::build_payment_attempt( $order, $this->create_gateway( 'pt' ) );
 	}
 }
