@@ -460,35 +460,22 @@ class Vinti4_Admin_Test_Panel {
 	 * @return array Test result.
 	 */
 	private static function test_feature_compatibility_declarations(): array {
-		if ( ! class_exists( 'Vinti4_Feature_Compatibility' ) || ! method_exists( 'Vinti4_Feature_Compatibility', 'declare_compatibility' ) ) {
+		if ( ! class_exists( 'Automattic\WooCommerce\Utilities\FeaturesUtil' ) || ! method_exists( 'Automattic\WooCommerce\Utilities\FeaturesUtil', 'get_compatible_features_for_plugin' ) ) {
 			return array(
 				'name'   => 'Feature Compatibility Declarations',
 				'status' => 'fail',
-				'detail' => 'Vinti4 feature compatibility helper is unavailable.',
+				'detail' => 'WooCommerce FeaturesUtil is unavailable.',
 			);
 		}
 
-		$declarations = Vinti4_Feature_Compatibility::declare_compatibility();
+		$plugin_file = function_exists( 'plugin_basename' ) ? plugin_basename( defined( 'VINTI4_PLUGIN_FILE' ) ? VINTI4_PLUGIN_FILE : dirname( __DIR__ ) . '/vinti4.php' ) : 'vinti4-woocommerce-plugin/vinti4.php';
+		$declarations = \Automattic\WooCommerce\Utilities\FeaturesUtil::get_compatible_features_for_plugin( $plugin_file );
 		$expected     = array( 'custom_order_tables', 'cart_checkout_blocks' );
 		$issues       = array();
 
 		foreach ( $expected as $feature_slug ) {
-			$feature_result = null;
-
-			foreach ( $declarations as $declaration ) {
-				if ( ( $declaration['feature'] ?? '' ) === $feature_slug ) {
-					$feature_result = $declaration;
-					break;
-				}
-			}
-
-			if ( null === $feature_result ) {
-				$issues[] = $feature_slug . ': declaration missing';
-				continue;
-			}
-
-			if ( 'declared' !== ( $feature_result['status'] ?? '' ) ) {
-				$issues[] = $feature_slug . ': ' . ( $feature_result['detail'] ?? 'declaration failed' );
+			if ( ! in_array( $feature_slug, $declarations['compatible'] ?? array(), true ) ) {
+				$issues[] = $feature_slug . ': declaration missing or rejected';
 			}
 		}
 
