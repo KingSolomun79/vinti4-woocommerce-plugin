@@ -81,10 +81,7 @@ class Vinti4_Feature_Compatibility {
 	 * @return string
 	 */
 	private static function plugin_file(): string {
-		if ( defined( 'VINTI4_PLUGIN_FILE' ) ) {
-			return VINTI4_PLUGIN_FILE;
-		}
-
-		return dirname( __DIR__ ) . '/vinti4.php';
+		$file = defined( 'VINTI4_PLUGIN_FILE' ) ? VINTI4_PLUGIN_FILE : dirname( __DIR__ ) . '/vinti4.php';
+		return function_exists( 'plugin_basename' ) ? plugin_basename( $file ) : $file;
 	}
 }
