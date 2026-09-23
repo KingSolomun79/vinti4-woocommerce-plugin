@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<!--
+  PROTOTYPE — throwaway, not production code.
+  Question: what should the "Record Payment" (manual payment) action look like
+  on the reception dashboard? Three structurally different variants, switchable
+  via ?variant=A/B/C and the floating bottom bar (or arrow keys).
+  All data below is fake. No backend, no WordPress, no persistence — state
+  lives in memory and resets on reload. Double-click this file to open it,
+  no server needed.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PROTOTYPE — Record Payment</title>
+<style>
+  :root {
+    --brand: #0A5B50;
+    --brand-light: #E8F5E9;
+    --danger: #d9534f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #f4f5f6;
+    margin: 0;
+    padding: 30px 20px 100px;
+    color: #222;
+  }
+  #proto-banner {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    background: #fff3cd;
+    border: 1px solid #ffe69c;
+    color: #664d03;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  #spb-container { max-width: 1200px; margin: 0 auto; }
+  #spb-header {
+    text-align: center;
+    margin-bottom: 24px;
+    font-family: sans-serif;
+  }
+  #spb-header h2 {
+    margin: 0;
+    color: #333;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 1.2em;
+    border-bottom: 2px solid var(--brand);
+    padding-bottom: 10px;
+  }
+  #variant-note {
+    max-width: 1200px;
+    margin: 0 auto 14px;
+    font-size: 13px;
+    color: #555;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #ddd;
+    font-family: sans-serif;
+  }
+  tr.head-row { background: var(--brand); color: #fff; text-align: left; }
+  th, td { padding: 12px; vertical-align: top; }
+  tr.data-row { border-bottom: 1px solid #eee; }
+  tr.data-row.locked { background-color: #f9f9f9; }
+  .guest-name { font-weight: bold; }
+  .booking-name { color: var(--brand); font-weight: 600; font-size: 0.9em; }
+  .meta { color: #666; font-size: 0.85em; margin-top: 4px; }
+  .status-badge {
+    display: inline-block; margin-top: 6px; font-size: 9px; font-weight: bold;
+    padding: 2px 5px; border-radius: 3px; text-transform: uppercase;
+  }
+  .status-pending { background: #ffc107; color: #000; }
+  .status-processing { background: #28a745; color: #fff; }
+  .total-cve { font-weight: bold; }
+  .total-eur { font-size: 11px; color: #666; }
+  .btn {
+    border: none; padding: 9px 14px; border-radius: 4px; font-weight: bold;
+    cursor: pointer; font-size: 13px; margin: 2px 0; display: block; width: 100%;
+  }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-secondary { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+  .btn:disabled { background: #ccc !important; color: #666 !important; cursor: not-allowed; border: none; }
+  .rem-line { color: var(--danger); font-size: 0.85em; }
+  .sent-line { color: var(--brand); font-size: 0.85em; }
+  .method-badge {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 6px;
+    font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 12px;
+    background: var(--brand-light); color: #2E7D32; border: 1px solid #A5D6A7;
+    width: fit-content;
+  }
+  select, input[type=text], input[type=number] {
+    font-size: 13px; padding: 6px; width: 100%; border: 1px solid #ccc; border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  label { font-size: 11px; color: #555; font-weight: 600; display: block; margin-bottom: 2px; }
+
+  /* ---- Variant A: inline expanding form ---- */
+  .inline-form-row td { background: #fbfaf5; border-top: 2px dashed #ddd; }
+  .inline-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+
+  /* ---- Variant B: modal ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+  }
+  .modal-box {
+    background: #fff; border-radius: 8px; padding: 24px; width: 360px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.25);
+  }
+  .modal-box h3 { margin: 0 0 4px; color: var(--brand); }
+  .modal-box .sub { font-size: 12px; color: #777; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+  /* ---- Variant C: status column + popover ---- */
+  .status-chip {
+    border: none; border-radius: 14px; padding: 5px 12px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; cursor: pointer;
+  }
+  .chip-unpaid { background: #fdecea; color: #b3261e; }
+  .chip-partial { background: #fff4e0; color: #a5680a; }
+  .chip-paid { background: var(--brand-light); color: #2E7D32; }
+  .popover {
+    position: absolute; z-index: 40; background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.15); padding: 14px; width: 300px; margin-top: 6px;
+  }
+  .popover h4 { margin: 0 0 8px; font-size: 13px; color: #333; }
+  .timeline-item { font-size: 12px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-item .when { color: #999; font-size: 11px; }
+  .popover hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+
+  /* ---- floating switcher ---- */
+  #proto-switcher {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #1e1e1e; color: #fff; border-radius: 999px; padding: 10px 8px;
+    display: flex; align-items: center; gap: 6px; box-shadow: 0 6px 24px rgba(0,0,0,.35);
+    font-family: sans-serif; z-index: 100; font-size: 13px;
+  }
+  #proto-switcher button {
+    background: #333; color: #fff; border: none; border-radius: 999px;
+    width: 30px; height: 30px; cursor: pointer; font-size: 14px;
+  }
+  #proto-switcher button:hover { background: #444; }
+  #proto-switcher .label { padding: 0 10px; min-width: 220px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="proto-banner">⚠ PROTOTYPE — mockup only, fake data, nothing here is wired to a real order or database.</div>
+
+<div id="spb-container">
+  <div id="spb-header"><h2>Reception Dashboard</h2></div>
+  <div id="variant-note"></div>
+  <div id="table-host"></div>
+</div>
+
+<div id="proto-switcher">
+  <button id="prev" aria-label="Previous variant">&larr;</button>
+  <div class="label" id="variant-label"></div>
+  <button id="next" aria-label="Next variant">&rarr;</button>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Fake sample data — 4 bookings covering: untouched, partially paid online,
+// fully settled by manual bank wire, and one mid-flow with the form open.
+// ---------------------------------------------------------------------------
+function freshBookings() {
+  return [
+    {
+      id: 941, guest: 'Ana Ferreira', booking: 'Ocean View Suite, 2p',
+      stay: '02/10/2026 - 05/10/2026', created: '20/09/2026 10:12',
+      total: 58000, sentPct: null, sentAmount: 0, paidTotal: 0,
+      status: 'pending', history: [], formOpen: false,
+    },
+    {
+      id: 938, guest: 'Marco Bianchi', booking: 'Garden Bungalow, 4p',
+      stay: '28/09/2026 - 02/10/2026', created: '18/09/2026 15:40',
+      total: 142000, sentPct: 30, sentAmount: 42600, paidTotal: 42600,
+      status: 'processing',
+      history: [ { when: '19/09/2026 09:02', label: '30% deposit — card (online)', method: 'card', amount: 42600 } ],
+      formOpen: false,
+    },
+    {
+      id: 935, guest: 'Helena Duarte', booking: 'Beachfront Villa, 6p',
+      stay: '10/10/2026 - 17/10/2026', created: '15/09/2026 11:05',
+      total: 310500, sentPct: 100, sentAmount: 310500, paidTotal: 310500,
+      status: 'processing',
+      history: [ { when: '16/09/2026 14:20', label: '100% — bank wire, ref BW-2291', method: 'wire', amount: 310500 } ],
+      formOpen: false,
+    },
+    {
+      id: 930, guest: 'Tomás Rocha', booking: 'Garden Bungalow, 2p',
+      stay: '24/09/2026 - 26/09/2026', created: '14/09/2026 08:30',
+      total: 76200, sentPct: null, sentAmount: 0, paidTotal: 0,
+      status: 'pending', history: [], formOpen: true, // pre-opened so the form is visible immediately
+    },
+  ];
+}
+
+let bookings = freshBookings();
+
+const methodLabel = { cash: 'Cash', wire: 'Bank Transfer', card_in_person: 'Card (in person)', other: 'Other' };
+const methodBadgeText = { cash: '✓ Cash', wire: '✓ Wire', card_in_person: '✓ Card', other: '✓ Other', card: '✓ Card' };
+
+function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+function outstanding(b) { return Math.max(0, b.total - b.paidTotal); }
+function eur(cve) { return (cve / 110).toFixed(2); }
+
+function confirmPayment(id, method, amount, ref) {
+  const b = bookings.find(x => x.id === id);
+  amount = parseFloat(amount) || 0;
+  b.paidTotal += amount;
+  b.history.push({ when: 'just now', label: `${amount >= outstandingBefore(b, amount) ? 'Full' : 'Partial'} — ${methodLabel[method]}${ref ? ', ref ' + ref : ''}`, method, amount });
+  if (outstanding(b) <= 0.5) b.status = 'processing';
+  b.formOpen = false;
+  render();
+}
+function outstandingBefore(b, amount) { return b.total - (b.paidTotal - amount); }
+
+function openForm(id) {
+  bookings.forEach(b => b.formOpen = (b.id === id));
+  render();
+}
+function closeForm(id) {
+  const b = bookings.find(x => x.id === id);
+  b.formOpen = false;
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Variant A — inline expanding row (form opens as an extra row directly below)
+// ---------------------------------------------------------------------------
+function renderVariantA() {
+  let rows = '';
+  bookings.forEach(b => {
+    const rem = outstanding(b);
+    const locked = rem <= 0.5;
+    const lastManual = [...b.history].reverse().find(h => h.method !== 'card');
+    rows += `
+      <tr class="data-row ${locked ? 'locked' : ''}">
+        <td>
+          <div class="guest-name">${b.guest}</div>
+          <div class="booking-name">${b.booking}</div>
+          <div class="meta">📅 ${b.stay}<br>🕒 Created: ${b.created}</div>
+          <span class="status-badge status-${b.status}">${b.status}</span>
+        </td>
+        <td>
+          <div class="total-cve">${fmt(b.total)} CVE</div>
+          <div class="total-eur">${eur(b.total)} EUR</div>
+        </td>
+        <td>
+          <div class="sent-line"><strong>Paid:</strong> ${fmt(b.paidTotal)} CVE</div>
+          <div class="rem-line"><strong>Rem:</strong> ${fmt(rem)} CVE</div>
+          ${lastManual ? `<div class="method-badge">${methodBadgeText[lastManual.method]}</div>` : ''}
+        </td>
+        <td style="width:190px;">
+          <button class="btn btn-primary" ${locked ? 'disabled' : ''}>Send Link</button>
+          <button class="btn btn-secondary" ${locked ? 'disabled' : ''} onclick="openForm(${b.id})">Record Payment</button>
+        </td>
+      </tr>
+      ${b.formOpen ? `
+      <tr class="inline-form-row">
+        <td colspan="4">
+          <div class="inline-form-grid">
+            <div>
+              <label>Method</label>
+              <select id="m-${b.id}">
+                <option value="cash">Cash</option>
+                <option value="wire">Bank Transfer</option>
+                <option value="card_in_person">Card (in person)</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label>Amount (CVE)</label>
+              <input type="number" id="a-${b.id}" value="${rem}">
+            </div>
+            <div>
+              <label>Reference / note</label>
+              <input type="text" id="r-${b.id}" placeholder="e.g. receipt #, wire ref">
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-primary" style="width:auto;" onclick="confirmPayment(${b.id}, document.getElementById('m-${b.id}').value, document.getElementById('a-${b.id}').value, document.getElementById('r-${b.id}').value)">Confirm</button>
+              <button class="btn btn-secondary" style="width:auto;" onclick="closeForm(${b.id})">Cancel</button>
+            </div>
+          </div>
+        </td>
+      </tr>` : ''}
+    `;
+  });
+
+  return `
+    <table>
+      <tr class="head-row"><th>Guest / Booking</th><th>Total</th><th>Paid / Remaining</th><th>Action</th></tr>
+      ${rows}
+    </table>`;
+}
+
+// ---------------------------------------------------------------------------
+// Variant B — modal / dialog overlay
+// ---------------------------------------------------------------------------
+function renderVariantB() {
+  let rows = '';
+  let modal = '';
+  bookings.forEach(b => {
+    const rem = outstanding(b);
+    const locked = rem <= 0.5;
+    const lastManual = [...b.history].reverse().find(h => h.method !== 'card');
+    rows += `
+      <tr class="data-row ${locked ? 'locked' : ''}">
+        <td>
+          <div class="guest-name">${b.guest}</div>
+          <div class="booking-name">${b.booking}</div>
+          <div class="meta">📅 ${b.stay}<br>🕒 Created: ${b.created}</div>
+          <span class="status-badge status-${b.status}">${b.status}</span>
+        </td>
+        <td>
+          <div class="total-cve">${fmt(b.total)} CVE</div>
+          <div class="total-eur">${eur(b.total)} EUR</div>
+        </td>
+        <td>
+          <div class="sent-line"><strong>Paid:</strong> ${fmt(b.paidTotal)} CVE</div>
+          <div class="rem-line"><strong>Rem:</strong> ${fmt(rem)} CVE</div>
+          ${lastManual ? `<div class="method-badge">${methodBadgeText[lastManual.method]}</div>` : ''}
+        </td>
+        <td style="width:190px;">
+          <button class="btn btn-primary" ${locked ? 'disabled' : ''}>Send Link</button>
+          <button class="btn btn-secondary" ${locked ? 'disabled' : ''} onclick="openForm(${b.id})">Record Payment</button>
+        </td>
+      </tr>`;
+
+    if (b.formOpen) {
+      modal = `
+      <div class="modal-overlay" onclick="if(event.target===this) closeForm(${b.id})">
+        <div class="modal-box">
+          <h3>Record a payment</h3>
+          <div class="sub">${b.guest} — ${b.booking}<br>Outstanding: <strong>${fmt(rem)} CVE</strong></div>
+          <label>Method</label>
+          <select id="m-${b.id}">
+            <option value="cash">Cash</option>
+            <option value="wire">Bank Transfer</option>
+            <option value="card_in_person">Card (in person)</option>
+            <option value="other">Other</option>
+          </select>
+          <label>Amount (CVE)</label>
+          <input type="number" id="a-${b.id}" value="${rem}">
+          <label>Reference / note</label>
+          <input type="text" id="r-${b.id}" placeholder="e.g. receipt #, wire ref">
+          <div class="modal-actions">
+            <button class="btn btn-primary" onclick="confirmPayment(${b.id}, document.getElementById('m-${b.id}').value, document.getElementById('a-${b.id}').value, document.getElementById('r-${b.id}').value)">Confirm payment</button>
+            <button class="btn btn-secondary" onclick="closeForm(${b.id})">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    }
+  });
+
+  return `
+    <table>
+      <tr class="head-row"><th>Guest / Booking</th><th>Total</th><th>Paid / Remaining</th><th>Action</th></tr>
+      ${rows}
+    </table>
+    ${modal}`;
+}
+
+// ---------------------------------------------------------------------------
+// Variant C — dedicated Payment Status column, click to open a popover with
+// the full record-keeping timeline (online + manual) and "add" at the bottom.
+// ---------------------------------------------------------------------------
+let openPopoverId = null;
+function togglePopover(id) {
+  openPopoverId = (openPopoverId === id) ? null : id;
+  bookings.forEach(b => b.formOpen = false);
+  render();
+}
+
+function renderVariantC() {
+  let rows = '';
+  bookings.forEach(b => {
+    const rem = outstanding(b);
+    const locked = rem <= 0.5;
+    const chipClass = b.paidTotal <= 0 ? 'chip-unpaid' : (locked ? 'chip-paid' : 'chip-partial');
+    const chipText = b.paidTotal <= 0 ? 'Unpaid' : (locked ? 'Paid' : 'Partially Paid');
+    const showPopover = (openPopoverId === b.id) || (b.formOpen && !bookings.some(x => x.id !== b.id && x.formOpen));
+
+    rows += `
+      <tr class="data-row ${locked ? 'locked' : ''}">
+        <td>
+          <div class="guest-name">${b.guest}</div>
+          <div class="booking-name">${b.booking}</div>
+          <div class="meta">📅 ${b.stay}<br>🕒 Created: ${b.created}</div>
+        </td>
+        <td>
+          <div class="total-cve">${fmt(b.total)} CVE</div>
+          <div class="total-eur">${eur(b.total)} EUR</div>
+        </td>
+        <td style="position:relative;">
+          <button class="status-chip ${chipClass}" onclick="togglePopover(${b.id})">${chipText}</button>
+          <div class="meta" style="margin-top:6px;">Rem: ${fmt(rem)} CVE</div>
+          ${(showPopover || b.formOpen) ? `
+          <div class="popover">
+            <h4>Payment record — ${b.guest}</h4>
+            ${b.history.length ? b.history.map(h => `
+              <div class="timeline-item">
+                <div>${h.label} — ${fmt(h.amount)} CVE</div>
+                <div class="when">${h.when}</div>
+              </div>`).join('') : '<div class="timeline-item">No payments recorded yet.</div>'}
+            <hr>
+            ${locked ? '<div class="meta">Fully settled — nothing left to record.</div>' : `
+              <label>Method</label>
+              <select id="m-${b.id}">
+                <option value="cash">Cash</option>
+                <option value="wire">Bank Transfer</option>
+                <option value="card_in_person">Card (in person)</option>
+                <option value="other">Other</option>
+              </select>
+              <label>Amount (CVE)</label>
+              <input type="number" id="a-${b.id}" value="${rem}">
+              <label>Reference / note</label>
+              <input type="text" id="r-${b.id}" placeholder="e.g. receipt #, wire ref">
+              <div class="modal-actions">
+                <button class="btn btn-primary" style="width:auto;" onclick="confirmPayment(${b.id}, document.getElementById('m-${b.id}').value, document.getElementById('a-${b.id}').value, document.getElementById('r-${b.id}').value); openPopoverId=null;">+ Add manual payment</button>
+                <button class="btn btn-secondary" style="width:auto;" onclick="openPopoverId=null; closeForm(${b.id})">Close</button>
+              </div>`}
+          </div>` : ''}
+        </td>
+        <td style="width:140px;">
+          <button class="btn btn-primary" ${locked ? 'disabled' : ''}>Send Link</button>
+        </td>
+      </tr>`;
+  });
+
+  return `
+    <table>
+      <tr class="head-row"><th>Guest / Booking</th><th>Total</th><th>Payment Status</th><th>Action</th></tr>
+      ${rows}
+    </table>`;
+}
+
+// ---------------------------------------------------------------------------
+// Switcher plumbing
+// ---------------------------------------------------------------------------
+const VARIANTS = {
+  A: { name: 'Inline expanding row', render: renderVariantA, note: 'The form opens as an extra row directly beneath the booking — no overlay, stays in the flow of the table. Closest to how the existing % selector already behaves.' },
+  B: { name: 'Modal dialog', render: renderVariantB, note: 'The form opens as a focused modal over a dimmed background. Forces a deliberate confirm/cancel — harder to fat-finger or leave half-filled if the front desk gets interrupted by a guest mid-entry.' },
+  C: { name: 'Payment Status column + record log', render: renderVariantC, note: 'Replaces the plain Sent/Rem figures with an Unpaid / Partially Paid / Paid chip. Clicking it opens the full payment history for that booking (online + manual) with "add manual payment" at the bottom — leans hardest into "record keeping."' },
+};
+const ORDER = ['A', 'B', 'C'];
+
+function currentVariant() {
+  const v = new URLSearchParams(location.search).get('variant');
+  return VARIANTS[v] ? v : 'A';
+}
+
+function render() {
+  const key = currentVariant();
+  document.getElementById('table-host').innerHTML = VARIANTS[key].render();
+  document.getElementById('variant-note').textContent = VARIANTS[key].note;
+  document.getElementById('variant-label').textContent = `${key} — ${VARIANTS[key].name}`;
+}
+
+function setVariant(key) {
+  const url = new URL(location.href);
+  url.searchParams.set('variant', key);
+  history.replaceState(null, '', url);
+  bookings = freshBookings(); // reset demo state on variant switch
+  openPopoverId = null;
+  render();
+}
+
+function step(dir) {
+  const idx = ORDER.indexOf(currentVariant());
+  const next = ORDER[(idx + dir + ORDER.length) % ORDER.length];
+  setVariant(next);
+}
+
+document.getElementById('prev').addEventListener('click', () => step(-1));
+document.getElementById('next').addEventListener('click', () => step(1));
+document.addEventListener('keydown', (e) => {
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowRight') step(1);
+});
+
+render();
+</script>
+</body>
+</html>
