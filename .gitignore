@@ -9,7 +9,7 @@
 /.wc-session.cookies
 /nul
 
-# Local investigation scratch files (temporary, to be deleted when done)
-/code1.php
-/code2.php
+# Contains a plaintext Microsoft Graph OAuth client_secret (RoomRaccoon IMAP
+# node, "1. Get Token") — do not commit. Rotate that secret if this file
+# is ever shared outside this machine.
 /RoomRaccoon - Email Listener & Messenger (HITL).json
