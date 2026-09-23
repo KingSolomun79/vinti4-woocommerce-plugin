@@ -8,3 +8,8 @@
 /.tmp-*.html
 /.wc-session.cookies
 /nul
+
+# Local investigation scratch files (temporary, to be deleted when done)
+/code1.php
+/code2.php
+/RoomRaccoon - Email Listener & Messenger (HITL).json
