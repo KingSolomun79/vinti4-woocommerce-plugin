@@ -150,6 +150,15 @@ function spb_reception_approval_list() {
         $balance = ($link_sent || $paid_total > 0) ? number_format($outstanding, 0) . " CVE" : "—";
         $can_record_payment = $outstanding > 0.01;
 
+        // Once an order is fully paid, the row locks — but staff still need a
+        // way to see what was actually paid (online, cash, however many
+        // entries) without digging into wp-admin. Reuse the same button and
+        // modal in a read-only "View Records" mode instead of disabling it
+        // outright, whenever there's actually something to show.
+        $has_payment_records = !empty($history_for_modal);
+        $payment_btn_enabled = $can_record_payment || $has_payment_records;
+        $payment_btn_label   = $can_record_payment ? 'Record Payment' : ($has_payment_records ? 'View Records' : 'Record Payment');
+
         // Status Badge
         $status_colors = [
             'pending'    => ['bg' => '#ffc107', 'text' => '#000'],
@@ -227,9 +236,10 @@ function spb_reception_approval_list() {
                                 data-booking='" . esc_attr($booking_info) . "'
                                 data-outstanding='{$outstanding}'
                                 data-history='" . esc_attr(wp_json_encode($history_for_modal)) . "'
-                                " . ($can_record_payment ? '' : 'disabled') . "
-                                style='width:100%; border:1px solid #0A5B50; padding:8px 15px; border-radius:4px; font-weight:bold; background:#fff; color:#0A5B50; cursor:pointer;" . ($can_record_payment ? '' : ' background:#f5f5f5; color:#999; border-color:#ccc; cursor:not-allowed;') . "'>
-                            Record Payment
+                                data-readonly='" . ($can_record_payment ? '0' : '1') . "'
+                                " . ($payment_btn_enabled ? '' : 'disabled') . "
+                                style='width:100%; border:1px solid #0A5B50; padding:8px 15px; border-radius:4px; font-weight:bold; background:#fff; color:#0A5B50; cursor:pointer;" . ($payment_btn_enabled ? '' : ' background:#f5f5f5; color:#999; border-color:#ccc; cursor:not-allowed;') . "'>
+                            {$payment_btn_label}
                         </button>
                     </td>
                   </tr>";
@@ -245,27 +255,29 @@ function spb_reception_approval_list() {
     $html .= "
     <div id='spb-payment-modal-overlay' style='display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); align-items:center; justify-content:center; z-index:999; font-family:sans-serif;'>
         <div style='background:#fff; border-radius:8px; padding:24px; width:380px; max-width:90vw; box-shadow:0 10px 40px rgba(0,0,0,.25);'>
-            <h3 style='margin:0 0 4px; color:#0A5B50;'>Record a payment</h3>
+            <h3 id='spb-modal-title' style='margin:0 0 4px; color:#0A5B50;'>Record a payment</h3>
             <div id='spb-modal-sub' style='font-size:12px; color:#777; margin-bottom:12px;'></div>
 
             <div id='spb-modal-history' style='max-height:150px; overflow-y:auto; border:1px solid #eee; border-radius:6px; margin-bottom:14px; display:none;'></div>
 
             <input type='hidden' id='spb-modal-order-id'>
-            <label style='font-size:11px; color:#555; font-weight:600; display:block; margin-bottom:2px;'>Method</label>
-            <select id='spb-modal-method' style='font-size:13px; padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; margin-bottom:10px;'>
-                {$method_options_html}
-            </select>
-            <label style='font-size:11px; color:#555; font-weight:600; display:block; margin-bottom:2px;'>Amount (CVE)</label>
-            <input type='number' id='spb-modal-amount' style='font-size:13px; padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; margin-bottom:10px; box-sizing:border-box;'>
-            <label style='font-size:11px; color:#555; font-weight:600; display:block; margin-bottom:2px;'>Reference / note (optional)</label>
-            <input type='text' id='spb-modal-reference' placeholder='e.g. receipt #, wire ref' style='font-size:13px; padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; margin-bottom:10px; box-sizing:border-box;'>
 
-            <div id='spb-modal-error' style='color:#8B0000; font-size:12px; margin-bottom:8px;'></div>
+            <div id='spb-modal-form-section'>
+                <label style='font-size:11px; color:#555; font-weight:600; display:block; margin-bottom:2px;'>Method</label>
+                <select id='spb-modal-method' style='font-size:13px; padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; margin-bottom:10px;'>
+                    {$method_options_html}
+                </select>
+                <label style='font-size:11px; color:#555; font-weight:600; display:block; margin-bottom:2px;'>Amount (CVE)</label>
+                <input type='number' id='spb-modal-amount' style='font-size:13px; padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; margin-bottom:10px; box-sizing:border-box;'>
+                <label style='font-size:11px; color:#555; font-weight:600; display:block; margin-bottom:2px;'>Reference / note (optional)</label>
+                <input type='text' id='spb-modal-reference' placeholder='e.g. receipt #, wire ref' style='font-size:13px; padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; margin-bottom:10px; box-sizing:border-box;'>
 
-            <div style='display:flex; gap:8px; margin-top:6px;'>
-                <button id='spb-modal-confirm' style='flex:1; border:none; padding:10px; border-radius:4px; font-weight:bold; background:#0A5B50; color:#fff; cursor:pointer;'>Confirm payment</button>
-                <button id='spb-modal-cancel' style='flex:1; border:1px solid #0A5B50; padding:10px; border-radius:4px; font-weight:bold; background:#fff; color:#0A5B50; cursor:pointer;'>Cancel</button>
+                <div id='spb-modal-error' style='color:#8B0000; font-size:12px; margin-bottom:8px;'></div>
+
+                <button id='spb-modal-confirm' style='width:100%; box-sizing:border-box; border:none; padding:10px; border-radius:4px; font-weight:bold; background:#0A5B50; color:#fff; cursor:pointer; margin-bottom:8px;'>Confirm payment</button>
             </div>
+
+            <button id='spb-modal-cancel' style='width:100%; box-sizing:border-box; border:1px solid #0A5B50; padding:10px; border-radius:4px; font-weight:bold; background:#fff; color:#0A5B50; cursor:pointer;'>Cancel</button>
         </div>
     </div>";
 
@@ -354,13 +366,16 @@ function spb_reception_approval_list() {
     const SPB_MANUAL_NONCE = " . wp_json_encode($manual_nonce) . ";
 
     const spbModalOverlay = document.getElementById('spb-payment-modal-overlay');
+    const spbModalTitle = document.getElementById('spb-modal-title');
     const spbModalSub = document.getElementById('spb-modal-sub');
     const spbModalHistory = document.getElementById('spb-modal-history');
+    const spbModalFormSection = document.getElementById('spb-modal-form-section');
     const spbModalOrderId = document.getElementById('spb-modal-order-id');
     const spbModalAmount = document.getElementById('spb-modal-amount');
     const spbModalReference = document.getElementById('spb-modal-reference');
     const spbModalError = document.getElementById('spb-modal-error');
     const spbModalConfirm = document.getElementById('spb-modal-confirm');
+    const spbModalCancel = document.getElementById('spb-modal-cancel');
 
     function spbCloseModal() {
         spbModalOverlay.style.display = 'none';
@@ -380,17 +395,34 @@ function spb_reception_approval_list() {
         if (button.disabled) return;
         button.addEventListener('click', function() {
             const outstanding = parseFloat(button.getAttribute('data-outstanding')) || 0;
+            const readonly = button.getAttribute('data-readonly') === '1';
             const guest = spbEscapeHtml(button.getAttribute('data-guest'));
             const booking = spbEscapeHtml(button.getAttribute('data-booking'));
             let history = [];
             try { history = JSON.parse(button.getAttribute('data-history') || '[]'); } catch (e) {}
 
             spbModalOrderId.value = button.getAttribute('data-id');
-            spbModalSub.innerHTML = guest + ' — ' + booking + '<br>Outstanding: <strong>' + outstanding.toLocaleString('en-US') + ' CVE</strong>';
-            spbModalAmount.value = outstanding.toFixed(2);
-            spbModalAmount.max = outstanding.toFixed(2);
             spbModalReference.value = '';
             spbModalError.textContent = '';
+
+            // Fully paid (or otherwise locked) orders open the same modal
+            // read-only — just the history, no new-payment form — so staff
+            // can always see what was actually paid without an admin login.
+            spbModalTitle.textContent = readonly ? 'Payment Records' : 'Record a payment';
+            spbModalFormSection.style.display = readonly ? 'none' : 'block';
+            spbModalCancel.textContent = readonly ? 'Close' : 'Cancel';
+
+            const outstandingLine = outstanding > 0.01
+                ? 'Outstanding: <strong>' + outstanding.toLocaleString('en-US') + ' CVE</strong>'
+                : '<strong style=\"color:#2E7D32;\">Fully paid</strong>';
+            spbModalSub.innerHTML = guest + ' — ' + booking + '<br>' + outstandingLine;
+
+            if (!readonly) {
+                spbModalAmount.value = outstanding.toFixed(2);
+                spbModalAmount.max = outstanding.toFixed(2);
+                spbModalConfirm.disabled = false;
+                spbModalConfirm.textContent = 'Confirm payment';
+            }
 
             if (history.length) {
                 spbModalHistory.style.display = 'block';
@@ -404,13 +436,11 @@ function spb_reception_approval_list() {
                 spbModalHistory.innerHTML = '';
             }
 
-            spbModalConfirm.disabled = false;
-            spbModalConfirm.textContent = 'Confirm payment';
             spbModalOverlay.style.display = 'flex';
         });
     });
 
-    document.getElementById('spb-modal-cancel').addEventListener('click', spbCloseModal);
+    spbModalCancel.addEventListener('click', spbCloseModal);
     spbModalOverlay.addEventListener('click', function(e) {
         if (e.target === spbModalOverlay) spbCloseModal();
     });
