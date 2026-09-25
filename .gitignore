@@ -13,10 +13,3 @@
 # node, "1. Get Token") — do not commit. Rotate that secret if this file
 # is ever shared outside this machine.
 /RoomRaccoon - Email Listener & Messenger (HITL).json
-
-# Local reference copies of the live WPCode snippets (São Pedro Bay reception
-# dashboard) — not part of this plugin's install, kept for the partial-payment
-# investigation only. (code1.php/code2.php, the previous names for these, were
-# committed by mistake — see INVESTIGATION-spb-partial-payment.md.)
-/Reception Dashboard - Partials.php
-/Override WooCommerce Order Total for Partial Payments.php
