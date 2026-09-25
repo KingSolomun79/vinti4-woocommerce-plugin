@@ -44,7 +44,7 @@ Confirmed there was no way to search or filter the reception dashboard. Added a 
 
 ## What we need from you
 
-1. **Deploy** the updated dashboard code (`code1.php`) to the WPCode snippet on the live site — it's ready, we just don't have deploy access there ourselves.
+1. **Deploy** the updated dashboard code (the "Reception Dashboard - Partials" WPCode snippet) to the live site — it's ready, we just don't have deploy access there ourselves.
 2. **Spot-check the 29 flagged bookings** below against your own records or SISP's merchant portal before resending any payment links, in case some were already settled outside the online flow:
 
    #728 (Husson), #696 (Silva), #677 (Vandervinne), #674 (Slama), #668 (Niang), #664 (Cardona), #662 (Janssens), #659 (Blum), #658 (Davidson), #657 (Muldermans), #638 (Vivo Energy), #633 (Vovchyk), #629 (Comello), #625 (Rousseau), #624 (Frédérique), #622 & #621 (Portugal Konings), #593 (Gomes), #587 (Luz), #583 (Rodrigues Fortes), #581 (Carlo), #579, #578/#577/#576 (Jos Konings), #567 (Rodrigues), #565 (Fernandes), #559 & #558 (Breuer)

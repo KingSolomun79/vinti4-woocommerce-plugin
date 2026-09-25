@@ -60,11 +60,17 @@ function vinti4_init() {
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-wc-vinti4-blocks-support.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-partial-payment.php';
 	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-admin-test-panel.php';
+	require_once VINTI4_PLUGIN_DIR . 'includes/class-vinti4-manual-payment.php';
 
 	if ( is_admin() ) {
 		Vinti4_Admin_Partial_Payment::register();
 		Vinti4_Admin_Test_Panel::register();
 	}
+
+	// Registered unconditionally (not gated behind is_admin()) so the AJAX
+	// action is reachable from frontend callers like the reception dashboard
+	// shortcode, not just wp-admin screens.
+	Vinti4_Manual_Payment::register();
 
 	// Register the vinti4-payment rewrite endpoint.
 	add_action( 'init', 'vinti4_add_rewrite_rules' );

@@ -35,10 +35,10 @@ Two **separate, disconnected** systems handle partial/deposit payments on this s
 - [`includes/class-wc-gateway-vinti4.php`](includes/class-wc-gateway-vinti4.php) line 259: the normal checkout flow calls `create_payment_attempt($order, (float) $order->get_total(), ['source' => 'checkout'])` then `Vinti4_Attempt_Store::append_attempt(...)` — i.e. it registers a proper attempt record using whatever `get_total()` returns at that moment.
 
 ### B. The client's live "Reception Dashboard" snippet (what's actually in use — buggy)
-Two files pulled from the live site's snippet plugin (WPCode or similar), **not part of this git repo**, kept locally as `code1.php` / `code2.php` (git-ignored) for reference:
+Two files pulled from the live site's snippet plugin (WPCode or similar), **not part of this git repo**, kept locally as `Reception Dashboard - Partials.php` / `Override WooCommerce Order Total for Partial Payments.php` (git-ignored) for reference:
 
-- `code1.php` — `spb_reception_approval_list()` shortcode. Renders a table of orders with a % selector + "Send Link" button per row. On click, POSTs to an n8n webhook (`https://n8nnew.seolutional.com/webhook/c5c48737-3091-4206-8116-e27cb0d8db8b`) with `order_id`, `requested_percentage`, `amount_to_pay_cve`.
-- `code2.php` — three hooks (`woocommerce_available_payment_gateways`, `woocommerce_order_get_total` filter @ priority 20, and a `wp` action) that override `$order->set_total()` **in memory only** (never saved) so the Vinti4 gateway's fingerprint/checkout uses the deposit amount instead of the full order total, while the WP admin/dashboard keeps showing the full price.
+- `Reception Dashboard - Partials.php` — `spb_reception_approval_list()` shortcode. Renders a table of orders with a % selector + "Send Link" button per row. On click, POSTs to an n8n webhook (`https://n8nnew.seolutional.com/webhook/c5c48737-3091-4206-8116-e27cb0d8db8b`) with `order_id`, `requested_percentage`, `amount_to_pay_cve`.
+- `Override WooCommerce Order Total for Partial Payments.php` — three hooks (`woocommerce_available_payment_gateways`, `woocommerce_order_get_total` filter @ priority 20, and a `wp` action) that override `$order->set_total()` **in memory only** (never saved) so the Vinti4 gateway's fingerprint/checkout uses the deposit amount instead of the full order total, while the WP admin/dashboard keeps showing the full price.
 - n8n workflow: `RoomRaccoon - Email Listener & Messenger (HITL)`, workflow ID `AttwbezGuct4Yrhm`, hosted at `https://n8nnew.seolutional.com`. Local export kept as `RoomRaccoon - Email Listener & Messenger (HITL).json` (git-ignored). Relevant node: **"Update Woo Order"** (~line 386 in the JSON), triggered by the same dashboard webhook, writes order meta:
   - `spb_payment_link_sent` = `'1'`
   - `spb_partial_payment_requested` = amount from the webhook payload
@@ -51,10 +51,10 @@ System B does **not** call `Vinti4_Attempt_Store::append_attempt()` or `create_p
 
 ## Bug #1: Can't request the remaining balance — CONFIRMED
 
-`code1.php` disables the entire row (select, manual input, button) the moment `spb_payment_link_sent === '1'`:
+`Reception Dashboard - Partials.php` disables the entire row (select, manual input, button) the moment `spb_payment_link_sent === '1'`:
 
 ```php
-$is_disabled = ($link_sent == '1');   // code1.php line 97
+$is_disabled = ($link_sent == '1');   // Reception Dashboard - Partials.php line 97
 ```
 
 I checked the full n8n workflow export: `spb_payment_link_sent` is written in **exactly one place** ("Update Woo Order" node), **always to `'1'`, never reset back to empty/0** — not on payment completion, not on order status change, not anywhere else in the workflow or in either PHP file.
@@ -73,7 +73,7 @@ Result: the first time ANY link is sent for an order (30%, 40%, 50%, or 100%), t
 All three `processing` orders already had their 30% deposit captured successfully — the client's report matches this exactly.
 
 ### Fix options
-1. **Minimal**: change `code1.php`'s disabled logic to key off *remaining balance* (recompute from `spb_original_total - spb_partial_payment_requested`, or better, actual paid total) instead of a one-shot "already sent" flag. Have the n8n workflow clear `spb_payment_link_sent` (or better, stop relying on it as a lock at all) once a request is fulfilled.
+1. **Minimal**: change `Reception Dashboard - Partials.php`'s disabled logic to key off *remaining balance* (recompute from `spb_original_total - spb_partial_payment_requested`, or better, actual paid total) instead of a one-shot "already sent" flag. Have the n8n workflow clear `spb_payment_link_sent` (or better, stop relying on it as a lock at all) once a request is fulfilled.
 2. **Structural (recommended)**: retire the bespoke `spb_*` meta system and have the dashboard's "Send Link" action call into this repo's existing `Vinti4_Admin_Partial_Payment` / `Vinti4_Attempt_Store` flow instead, so there is one source of truth for paid/outstanding and the two systems stop diverging.
 
 ---
@@ -107,7 +107,7 @@ Checked systematically:
 
 ## Feature request #3: Search on the Reception Dashboard
 
-Confirmed — `code1.php` has no search/filter UI at all (grepped, no matches). Client says identifying bookings currently takes significant time. Straightforward addition: a text input filtering the rendered rows client-side (guest name, booking type, order ID) would likely be enough given the dashboard only loads 50 orders at a time (`wc_get_orders(['limit' => 50, ...])` — also worth flagging that `limit => 50` may itself be part of why bookings are hard to find, if there are more than 50 open orders at a time).
+Confirmed — `Reception Dashboard - Partials.php` has no search/filter UI at all (grepped, no matches). Client says identifying bookings currently takes significant time. Straightforward addition: a text input filtering the rendered rows client-side (guest name, booking type, order ID) would likely be enough given the dashboard only loads 50 orders at a time (`wc_get_orders(['limit' => 50, ...])` — also worth flagging that `limit => 50` may itself be part of why bookings are hard to find, if there are more than 50 open orders at a time).
 
 ---
 
@@ -119,4 +119,55 @@ Confirmed — `code1.php` has no search/filter UI at all (grepped, no matches). 
 - n8n instance: `https://n8nnew.seolutional.com`. An MCP server named `n8n-mcp` was registered for this project at **local scope** (`claude mcp add --transport http n8n-mcp https://n8nnew.seolutional.com/mcp-server/http --header "Authorization: Bearer ..." -s local`) — config lives in `~/.claude.json` under this project, not committed to git. **Do not edit the live n8n workflow** — read-only, per user instruction.
   - **2026-09-23 update**: still not usable. `claude mcp list` reports it "✔ Connected" (that's just an HTTP reachability check), but it never actually attaches as an MCP server in-session — `ListMcpResourcesTool`/`ToolSearch` don't see it, and the only n8n tools available are from an unrelated "claude.ai n8n" server pointed at a different (personal) n8n instance. Don't burn time re-probing `claude mcp list` — go straight to the local JSON export fallback.
 - The relevant n8n workflow is `RoomRaccoon - Email Listener & Messenger (HITL)`, ID `AttwbezGuct4Yrhm`. A local JSON export also exists at the project root (git-ignored) as a fallback if the MCP connection isn't available.
-- `code1.php`, `code2.php`, and the n8n workflow JSON export live at the project root, are git-ignored (see `.gitignore`), and the user intends to delete them once this investigation wraps up.
+- `Reception Dashboard - Partials.php`, `Override WooCommerce Order Total for Partial Payments.php`, and the n8n workflow JSON export live at the project root and are git-ignored (see `.gitignore`), and the user intends to delete them once this investigation wraps up.
+  - **2026-09-23 update**: these were originally kept locally as `code1.php`/`code2.php`, but those two filenames were never actually added to `.gitignore` and ended up committed to this branch by mistake (see `git log` on this branch). Renamed to their real WPCode snippet titles above (matches an automated WPCode backup that dropped fresh copies under these names) and *now* correctly git-ignored going forward. The old `code1.php`/`code2.php` were deleted from the working tree; the stray commit still exists in this branch's history but isn't being rewritten.
+
+---
+
+## Follow-up: dashboard/system gap analysis — 2026-09-23
+
+Client sent a fresh screenshot of the live dashboard plus a broader ask: accurate remainder tracking with a hard cap (can't request more than what's actually still owed), an owner-visible payment log, an accurate balance tally, and advice on reflecting partial/full payment in WooCommerce order status without adding a custom status. Investigated read-only against live order data.
+
+### Critical finding: the bug-1 fix (as drafted) won't actually work once deployed
+
+Pulled order **#738** ("jo konings", created today 15:14 — the exact row in the client's screenshot): total 1,100 CVE, 70% requested (770 CVE), **`_vinti4_attempt_history` has zero entries** — nothing has been paid, the guest hasn't even opened the payment link. The live dashboard shows "Rem: 770 CVE." That's wrong; with nothing paid, the true remaining balance is the full 1,100.
+
+Root cause: `Override WooCommerce Order Total for Partial Payments.php`'s `woocommerce_order_get_total` filter (priority 20, `spb_vinti4_modal_final_force`) only checks `is_admin()` — it is **not** scoped to the checkout/pay page, so it also rewrites `$order->get_total()` on the Reception Dashboard page itself whenever `spb_payment_link_sent === '1'`. The already-drafted fix in `Reception Dashboard - Partials.php` computes outstanding via `Vinti4_Attempt_Store::get_outstanding_total($order)`, which internally calls `$order->get_total()` — so it silently reads the corrupted (already-overridden) total instead of the real one, and the balance is wrong by construction. **Deploying the current `Reception Dashboard - Partials.php` fix alone will not fix the displayed balance.**
+
+`Reception Dashboard - Partials.php` already has its own equivalent override at the bottom (section 4, `spb_vinti4_deposit_amount_override`), correctly scoped to `is_wc_endpoint_url('order-pay')` only. `Override WooCommerce Order Total for Partial Payments.php` is redundant on top of it and is the one causing the corruption.
+
+**Recommendation: retire `Override WooCommerce Order Total for Partial Payments.php` entirely.** Confirmed it isn't needed — `Reception Dashboard - Partials.php`'s own scoped override already does the job of forcing the deposit amount into the gateway at checkout time.
+
+### Gap: no cap on requested amount vs. actual outstanding
+
+The dashboard's % dropdown/manual input always computes the requested amount against the **original order total** (`data-total` in the JS), never against what's actually still owed, and nothing clamps it. Even after fixing the lock (bug 1) and the total-override corruption above, staff could still select "100%" after a 30% deposit has already been paid and re-request the full original amount — there's no validation anywhere in the System B path preventing over-collection.
+
+This exact validation already exists, correctly, in System A: [class-vinti4-admin-partial-payment.php:290-321](includes/class-vinti4-admin-partial-payment.php#L290-L321) computes percentage against `Vinti4_Attempt_Store::get_outstanding_total()` and hard-rejects (server-side, in the AJAX handler) any amount exceeding outstanding + 0.01. Needs porting into whatever accepts the dashboard's "Send Link" request — and must be enforced server-side (n8n webhook / a repo-side endpoint), since client-side JS clamping alone can be bypassed.
+
+### Gap: no payment log / audit trail on the dashboard side
+
+`Reception Dashboard - Partials.php` + the n8n "Update Woo Order" node **overwrite** `spb_partial_payment_requested` / `spb_partial_percentage` / `spb_original_total` on every "Send Link" click — no history of "30% sent, then 30% more, then rest by cash" is retained anywhere in System B.
+
+System A already solves this correctly, just isn't wired to the dashboard: [class-vinti4-admin-partial-payment.php:76-127](includes/class-vinti4-admin-partial-payment.php#L76-L127) renders a real append-only history table (amount, Paid/Failed/Pending badge, date, reference) per order in the wp-admin order screen, backed by `_vinti4_attempt_history`. Recommend routing the dashboard's "Send Link" action through this same attempt-store flow (`create_payment_attempt()` + `Vinti4_Attempt_Store::append_attempt()`) instead of raw `spb_*` meta overwrites, so every request is automatically logged with no extra UI work.
+
+Cash/offline payments have **no recording mechanism at all** yet — `prototype-record-payment.html` from the prior session sketched three UI variants for this, but it's throwaway HTML only, no backend. Needs a real handler that appends a synthetic `completed` attempt (tagged `metadata.source = 'manual_cash'` or similar) plus an order note, so manual payments flow into the same outstanding calculation and log as gateway payments.
+
+### WooCommerce status advice (no new custom status)
+
+Current behavior ([class-vinti4-callback-handler.php:551-598](includes/class-vinti4-callback-handler.php#L551-L598)): partial payment → stock `processing`; full payment → `processing` or `completed` per the existing `order_status_after_payment` toggle ([class-wc-gateway-vinti4.php:131](includes/class-wc-gateway-vinti4.php#L131)). Both partial and full currently land on the same status (`processing`) unless full-payment is set to `completed` — so status alone can't distinguish "partially paid, balance owing" from "fully paid."
+
+Recommended: **don't add a custom order status.** WooCommerce ties stock handling, reports, and other plugins' automations to its native statuses; a new `wc-partial-payment` status requires `register_post_status()` plus auditing every place that filters by status. Two options, in order of preference:
+1. Leave WC status alone; add a separate **payment-progress badge** ("Partially Paid — X owing" / "Paid in Full"), computed purely from `Vinti4_Attempt_Store::get_outstanding_total()`, shown next to the existing status badge on both the dashboard and the admin order list. Zero risk to anything keyed off WC status.
+2. If it must show in the native WC status column/filter: repurpose **`on-hold`** for "partially paid, balance outstanding," reserve `processing`/`completed` for fully paid. Real WC status, no registration needed — but `on-hold` carries its own conventional meaning elsewhere (stock handling, other tooling) that this would be overloading; flag that tradeoff before committing to it.
+
+### Proposed course of action (sequenced)
+
+1. **Retire `Override WooCommerce Order Total for Partial Payments.php`** on the live WPCode snippet plugin — removes the redundant, unscoped total override that's corrupting the dashboard's own balance reads. Lowest risk, fixes the tally-accuracy problem at the root; nothing else here can be trusted live until this lands.
+2. **Deploy the already-drafted `Reception Dashboard - Partials.php` fix** (recompute outstanding via `Vinti4_Attempt_Store`, unlock rows once genuinely outstanding) — now safe to trust once step 1 is live.
+3. **Add the outstanding-balance cap** to the request-creation path (dashboard → n8n or a new repo-side endpoint), mirroring the validation already in `class-vinti4-admin-partial-payment.php` — closes the "can't request more than what's left" gap, enforced server-side.
+4. **Route "Send Link" through the attempt-store flow** instead of raw `spb_*` meta overwrites — gives every dashboard-issued request a permanent, appended log entry automatically (closes the audit-log gap for online requests).
+5. **Build the "Record Payment" (cash/offline) backend** from the `prototype-record-payment.html` UI work — append a manual attempt + order note so cash payments count toward the same outstanding calc and log.
+6. **Add the payment-progress badge** (Partially Paid / Paid in Full) once outstanding is trustworthy end to end — no new WC status needed.
+7. Separately, still blocked on the client: **spot-check the 29 flagged bookings** and **get the specific order number** behind the original "still shows pending" report (bug #2) — unrelated to the above, needs their input to close out.
+
+Steps 1–2 are the only ones with a "deploy" step outside this repo (the WPCode snippet on the live site) — no deploy access from here, per the existing constraint in `FINDINGS-reception-dashboard-payment-bugs.md`. Steps 3–6 are net-new work (dashboard request path + a cash-recording feature) and would benefit from being scoped as their own follow-up, since they go beyond the three originally reported bugs.
