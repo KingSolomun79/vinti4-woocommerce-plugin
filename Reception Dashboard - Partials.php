@@ -350,6 +350,7 @@ function spb_reception_approval_list() {
                     order_id: orderId,
                     requested_percentage: percentage,
                     amount_to_pay_cve: amount,
+                    outstanding_cve: outstanding.toFixed(2),
                     amount_to_pay_eur: (amount / 110.00).toFixed(2)
                 })
             }).then(res => {
@@ -495,21 +496,72 @@ function spb_reception_approval_list() {
  * This ensures the bank's Fingerprint uses the deposit amount
  * while keeping the Dashboard and Admin figures at full price.
  */
-add_action('wp', 'spb_vinti4_deposit_amount_override');
-function spb_vinti4_deposit_amount_override() {
-    // Only target the frontend 'Order Pay' page
-    if (is_admin() || !is_wc_endpoint_url('order-pay')) return;
+add_filter('woocommerce_order_get_total', 'spb_vinti4_deposit_amount_override', 20, 2);
+function spb_vinti4_deposit_amount_override($total, $order) {
+    // Never touch admin screens or AJAX (admin-ajax counts as is_admin()).
+    if (is_admin() || !($order instanceof WC_Order)) return $total;
 
-    $order_id = absint(get_query_var('order-pay'));
-    $order = wc_get_order($order_id);
-
-    if ($order && $order->get_meta('spb_payment_link_sent') === '1') {
-        $partial = $order->get_meta('spb_partial_payment_requested');
-        if (!empty($partial)) {
-            // Memory-only override: Tricking the bank's plugin without saving to DB.
-            $order->set_total((float)$partial);
-        }
+    // Only act while the guest is on / submitting the pay-for-order page for THIS
+    // order. Matching the order key from the request (instead of the 'order-pay'
+    // query var) works at any hook timing, including WC's pay form handler which
+    // runs before the main query is parsed. This keeps the Reception Dashboard,
+    // emails and every other page on the real total.
+    $request_key = isset($_GET['key']) ? wc_clean(wp_unslash($_GET['key'])) : '';
+    $uri         = isset($_SERVER['REQUEST_URI']) ? (string) wp_unslash($_SERVER['REQUEST_URI']) : '';
+    $is_pay_flow = isset($_GET['pay_for_order']) || isset($_POST['woocommerce_pay']) || strpos($uri, 'order-pay') !== false;
+    if (!$is_pay_flow || $request_key === '' || !hash_equals((string) $order->get_order_key(), (string) $request_key)) {
+        return $total;
     }
+
+    if ($order->get_meta('spb_payment_link_sent') !== '1') return $total;
+
+    $partial = (float) $order->get_meta('spb_partial_payment_requested');
+
+    // Only ever lower the amount; never exceed the real order total.
+    if ($partial > 0 && $partial < (float) $total) {
+        return $partial;
+    }
+    return $total;
+}
+
+/**
+ * 5. DEPOSIT SUMMARY ON THE PAY PAGE
+ * Shows the guest what they are paying now ("40%"), in CVE and EUR, and what
+ * remains for reception. Display only; the charged amount comes from section 4.
+ * CVE is pegged to the euro at 110.265 CVE = 1 EUR.
+ */
+add_action('woocommerce_pay_order_before_submit', 'spb_pay_page_deposit_summary');
+function spb_pay_page_deposit_summary() {
+    global $wp;
+    $order_id = isset($wp->query_vars['order-pay']) ? absint($wp->query_vars['order-pay']) : 0;
+    $order    = $order_id ? wc_get_order($order_id) : false;
+    if (!$order || $order->get_meta('spb_payment_link_sent') !== '1') return;
+
+    $partial = (float) $order->get_meta('spb_partial_payment_requested');
+    $pct     = $order->get_meta('spb_partial_percentage');
+
+    // Real order total: take our own price filter out of the picture.
+    remove_filter('woocommerce_order_get_total', 'spb_vinti4_deposit_amount_override', 20);
+    $real_total = (float) $order->get_total();
+    add_filter('woocommerce_order_get_total', 'spb_vinti4_deposit_amount_override', 20, 2);
+
+    $paid_so_far = class_exists('Vinti4_Attempt_Store') ? Vinti4_Attempt_Store::get_paid_total($order) : 0;
+    // Nothing to explain when this payment settles everything that is still owed.
+    if ($partial <= 0 || $partial >= ($real_total - $paid_so_far) - 0.01) return;
+
+    $rate      = 110.265;
+    $remaining = max(0, $real_total - $paid_so_far - $partial);
+    $fmt       = function ($cve) use ($rate) {
+        return number_format($cve, 2, ',', ' ') . ' CVE (≈ ' . number_format($cve / $rate, 2, ',', ' ') . ' EUR)';
+    };
+    $pct_label = ($pct !== '' && is_numeric($pct)) ? ' (' . esc_html(rtrim(rtrim(number_format((float) $pct, 2, '.', ''), '0'), '.')) . '%)' : '';
+
+    echo '<div class="spb-deposit-summary" style="margin:0 0 16px;padding:14px 16px;background:#fff8e1;border:1px solid #ffe08a;border-radius:6px;">'
+        . '<strong>' . esc_html__('Deposit payment', 'vinti4') . $pct_label . '</strong><br>'
+        . esc_html__('Amount you pay now:', 'vinti4') . ' <strong>' . esc_html($fmt($partial)) . '</strong><br>'
+        . esc_html__('Total booking:', 'vinti4') . ' ' . esc_html($fmt($real_total)) . '<br>'
+        . esc_html__('Remaining balance (payable at reception):', 'vinti4') . ' ' . esc_html($fmt($remaining))
+        . '</div>';
 }
 
 
